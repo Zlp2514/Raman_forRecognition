@@ -93,3 +93,83 @@ def genuine_threshold(Z_train: np.ndarray, y_train: np.ndarray,
     if not out:
         return 0.0
     return float(np.quantile(np.concatenate(out), q))
+
+
+# ---------------------------------------------------------------- 改进版三件套
+
+
+def fisher_weights(Z: np.ndarray, y: np.ndarray, eps: float = 1e-8) -> np.ndarray:
+    """逐波数的 Fisher 比：类间方差 / 类内方差。
+
+    用来给"局部加权匹配"提供权重——判别力强的波数（如各类差异明显的窄峰）
+    权重高，各类都一样的波数（如宽背景残余）权重低。只用库内带标签的训练样本估计，
+    不涉及测试数据，因此不构成泄漏。
+    """
+    classes = np.unique(y)
+    mu_all = Z.mean(axis=0)
+    between = np.zeros(Z.shape[1])
+    within = np.zeros(Z.shape[1])
+    for c in classes:
+        Zc = Z[y == c]
+        if len(Zc) == 0:
+            continue
+        mu_c = Zc.mean(axis=0)
+        between += len(Zc) * (mu_c - mu_all) ** 2
+        within += ((Zc - mu_c) ** 2).sum(axis=0)
+    w = between / (within + eps)
+    w = np.clip(w, 0.0, np.quantile(w, 0.99))       # 截断极端值
+    if w.sum() <= 0:
+        return np.ones_like(w)
+    return w / w.mean()
+
+
+def _normalize_rows(A: np.ndarray) -> np.ndarray:
+    A = A - A.mean(axis=1, keepdims=True)
+    return A / (np.linalg.norm(A, axis=1, keepdims=True) + 1e-12)
+
+
+def best_shift_similarity(Q: np.ndarray, L: np.ndarray, max_shift: int = 12
+                          ) -> np.ndarray:
+    """带峰位对齐的最大相似度矩阵。
+
+    单细胞光谱的峰位会随批次整体漂移几十个波数点，直接算相关等于比较"谁漂得更像"。
+    这里对每条查询在 ±max_shift 个采样点范围内平移，取最佳对齐后的相关系数。
+    逐个 shift 用矩阵乘法向量化，避免逐对循环。
+    """
+    Q = _normalize_rows(np.asarray(Q, dtype=float))
+    L = _normalize_rows(np.asarray(L, dtype=float))
+    d = Q.shape[1]
+    best = np.full((Q.shape[0], L.shape[0]), -np.inf)
+    for s in range(-max_shift, max_shift + 1):
+        if s >= 0:
+            A, B = Q[:, s:], L[:, :d - s]
+        else:
+            A, B = Q[:, :d + s], L[:, -s:]
+        if A.shape[1] < 32:
+            continue
+        A = _normalize_rows(A)
+        B = _normalize_rows(B)
+        best = np.maximum(best, A @ B.T)
+    return best
+
+
+def class_thresholds(Z_train: np.ndarray, y_train: np.ndarray,
+                     lib_X: np.ndarray, lib_y: np.ndarray,
+                     q: float = 0.05, max_shift: int = 0) -> dict:
+    """分类别的拒识阈值。
+
+    不同物质的可分性差别很大（实测 AUROC 从 0.10 到 0.96），用统一阈值必然失配。
+    这里为每个类别单独标定：取该类训练样本"与自身类库匹配得分"的 q 分位。
+    """
+    out = {}
+    for c in np.unique(y_train):
+        Zc = Z_train[y_train == c]
+        mask = lib_y == c
+        if not mask.any() or len(Zc) == 0:
+            continue
+        if max_shift > 0:
+            sim = best_shift_similarity(Zc, lib_X[mask], max_shift)
+        else:
+            sim = _normalize_rows(Zc) @ _normalize_rows(lib_X[mask]).T
+        out[str(c)] = float(np.quantile(sim.max(axis=1), q))
+    return out

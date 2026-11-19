@@ -373,6 +373,27 @@ python 13_library_match.py --sim raw --no-show     # 原始谱相关
 python 13_library_match.py --sim deriv --no-show   # 导数相关
 ```
 
+### 改进版：补上峰位对齐、Fisher 加权、分类别阈值
+
+| 变体 | 协议 | 闭集 | 库外拒识 | 开放集 | AUROC |
+|---|---|---|---|---|---|
+| 朴素 | 随机 | 0.686 | 0.147 | 0.449 | 0.563 |
+| 朴素 | 留批次 | 0.684 | 0.147 | 0.556 | 0.540 |
+| 改进 | 随机 | **0.728** | **0.303** | **0.540** | 0.573 |
+| 改进 | 留批次 | 0.659 | **0.290** | 0.560 | 0.553 |
+
+![改进版对比](library_v2_result_bacterial.png)
+
+**拒识率翻倍，但 AUROC 几乎没动（0.563→0.573）。** 这说明提升几乎全部来自阈值变严，
+而不是"库内与库外变得更可分"——留批次下闭集准确率反而从 0.684 掉到 0.659。
+
+> 这是评估这类改进时最容易骗过自己的地方：只看开放集准确率会以为方法变好了，
+> 把 AUROC 单列出来才看得出真正的可分性没变。详见 `experiments/2026-11-19-p11b-library-v2.md`。
+
+```bash
+python 14_library_match_v2.py --no-show
+```
+
 ## 无真值选参实验（P10，结论：能力有限）
 
 真实光谱没有"正确背景"这个标准答案，误差算不出来。本轮设计四个**不需要真值**的代理指标
@@ -449,6 +470,7 @@ Raman_forRecognition/
 ├── 11_neural.py                  # 非线性：MLP 与 1D-CNN（需 PyTorch）
 ├── 12_param_selection.py         # 选参：无真值代理指标验证与应用
 ├── 13_library_match.py           # 库匹配：建库 + 比对 + 拒识的可行性
+├── 14_library_match_v2.py        # 库匹配改进版：对齐 + 加权 + 分类别阈值
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── tests/test_core.py            # 单元测试（unittest，23 个用例）
@@ -470,6 +492,7 @@ Raman_forRecognition/
 ├── neural_result.png             # 11 的非线性模型对比
 ├── param_selection_validate.png  # 12 的代理指标验证
 ├── library_match_result_raw.png  # 13 的库匹配结果
+├── library_v2_result_bacterial.png # 14 的改进版对比
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -513,6 +536,7 @@ print("负值比例:", spec.negative_ratio())
 | P9 | 工程化：CLI、单元测试、文档 | ✅ 已完成 |
 | P10 | 无真值条件下的基线参数选择（代理指标） | ✅ 已完成（排序有效，下游收益可忽略） |
 | P11 | 谱库匹配可行性（建库 + 比对 + 拒识） | ✅ 已完成（朴素实现明显弱于分类器） |
+| P11b | 库匹配改进版（峰位对齐 + Fisher 加权 + 分类别阈值） | ✅ 已完成（拒识提升，可分性未变） |
 
 ## 环境
 

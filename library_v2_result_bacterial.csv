@@ -1,0 +1,5 @@
+﻿variant,protocol,closed,known_ok,reject,open_all,auroc
+v1,random,0.6857,0.6515,0.1467,0.4494,0.5629
+v1,loo_batch,0.6844,0.6379,0.1467,0.5560,0.5401
+v2,random,0.7283,0.6985,0.3029,0.5402,0.5727
+v2,loo_batch,0.6593,0.6144,0.2897,0.5603,0.5532
