@@ -46,7 +46,8 @@ CONFIGS = [
 ]
 
 
-def fit_predict(X_tr, y_tr, X_te, y_te, n_components: int = 20) -> float:
+def fit_predict(X_tr, y_tr, X_te, y_te, n_components=None) -> float:
+    """n_components=None 表示不降维（P5 维度扫描发现降维会压低细菌集性能）。"""
     from sklearn.decomposition import PCA
     from sklearn.metrics import accuracy_score
     from sklearn.preprocessing import StandardScaler
@@ -54,13 +55,15 @@ def fit_predict(X_tr, y_tr, X_te, y_te, n_components: int = 20) -> float:
 
     scaler = StandardScaler().fit(X_tr)
     Zs, Zt = scaler.transform(X_tr), scaler.transform(X_te)
-    k = int(min(n_components, Zs.shape[0] - 1, Zs.shape[1]))
-    pca = PCA(n_components=k, random_state=0).fit(Zs)
-    clf = SVC(kernel="linear", C=1.0).fit(pca.transform(Zs), y_tr)
-    return float(accuracy_score(y_te, clf.predict(pca.transform(Zt))))
+    if n_components is not None:
+        k = int(min(n_components, Zs.shape[0] - 1, Zs.shape[1]))
+        pca = PCA(n_components=k, random_state=0).fit(Zs)
+        Zs, Zt = pca.transform(Zs), pca.transform(Zt)
+    clf = SVC(kernel="linear", C=1.0).fit(Zs, y_tr)
+    return float(accuracy_score(y_te, clf.predict(Zt)))
 
 
-def evaluate(dataset: Dataset, n_components: int = 20) -> list[dict]:
+def evaluate(dataset: Dataset, n_components=None) -> list[dict]:
     X_raw, y, groups = prepare_matrix(dataset, normalize=None)
     groups = np.asarray(groups)
 
@@ -141,7 +144,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="训练期数据增强实验")
     parser.add_argument("--dataset", choices=["bacterial", "oil", "both"],
                         default="both")
-    parser.add_argument("--components", type=int, default=20)
+    parser.add_argument("--components", type=int, default=None,
+                        help="PCA 维数，省略则不降维（P5 发现降维压低细菌集性能）")
     parser.add_argument("--no-show", action="store_true")
     args = parser.parse_args()
     if args.no_show:
