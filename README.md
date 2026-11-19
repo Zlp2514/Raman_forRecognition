@@ -101,6 +101,9 @@ python 04_classify.py --dataset oil --classifier lda
 
 ## 批次校正实验（负结果）
 
+> 详细技术报告（含逐方法失效机制、局限说明、可引用结论）：
+> **[docs/batch-correction-negative-result.md](docs/batch-correction-negative-result.md)**
+
 针对上面的 9–13 点差距，测试了三种**无需标签**的批次校正手段，结果**全部无效**：
 
 | 预处理 | bacterial 留批次 | 相对 SNV | oil 留批次 | 相对 SNV |
@@ -120,7 +123,8 @@ python 04_classify.py --dataset oil --classifier lda
 剩下的差异是峰位微移、峰宽变化等非线性成分，线性变换处理不了。导数放大噪声、
 批次中心化连带减掉类别共性、CORAL 的单源域假设在多批次训练集上不成立。
 
-详细分析见 `experiments/2026-11-19-p3-batch-correction.md`。**这个负结果本身有价值**：
+详细分析见 `docs/batch-correction-negative-result.md`（技术报告）与
+`experiments/2026-11-19-p3-batch-correction.md`（实验记录）。**这个负结果本身有价值**：
 它说明浅层预处理已到瓶颈，提升必须来自数据驱动的不变性（增强 / 域对抗）或度量学习。
 
 ```bash
@@ -169,6 +173,8 @@ Raman_forRecognition/
 ├── 05_batch_effect.py            # 校正：八种预处理 × 两种协议的批次效应实验
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
+├── docs/                         # 技术报告
+│   └── batch-correction-negative-result.md   # 批次校正负结果详细分析
 ├── my_raman.csv                  # 示例输入数据
 ├── quickstart_result.png         # 01 的输出图
 ├── my_raman_corrected.png        # 02 的输出图
