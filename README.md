@@ -131,6 +131,31 @@ python 04_classify.py --dataset oil --classifier lda
 python 05_batch_effect.py --no-show
 ```
 
+## 数据增强实验（仍无显著提升）
+
+既然"改输入"失败，第二轮改为**训练期增强**：只加能改变形状的扰动（背景形状、波数平移、模糊、噪声），
+在训练集上制造"看起来像别的批次"的样本。
+
+> ⚠️ 一个容易踩的坑：加偏移、调增益在 SNV 之后**完全不可见**（SNV 会把它们一并消掉），
+> 这样增强等于没做。这是光谱数据增强最常见的误区。
+
+| 配置 | bacterial 留批次 | oil 留批次 |
+|---|---|---|
+| 无增强（基线） | 0.778 ± 0.052 | 0.891 ± 0.118 |
+| 增强×2 | 0.779 | 0.905 |
+| 增强×4 | 0.771 | 0.888 |
+| 仅背景形状×4 | 0.788 | 0.907 |
+| 仅平移×4 | 0.768 | **0.834** |
+
+![数据增强实验](augmentation_result.png)
+
+最大提升 1.6 pt，小于一个标准差；随机划分反而普遍下降 2–5 pt（增强起了正则化作用，
+但没带来跨批次不变性）。**平移增强害处最大**——拉曼峰位是识别物质的核心特征，随机平移
+等于教模型忽略它。
+
+详细分析见 `experiments/2026-11-19-p4-augmentation.md`。连续两轮失败的共同结论：
+**批次效应需要被显式建模，而不是被随机化掉。**
+
 ## 六种方法的对比结果
 
 合成光谱（1600 点，噪声标准差 5.0，真实背景已知）：
@@ -165,12 +190,14 @@ Raman_forRecognition/
 │   ├── synthetic.py              #   带真值的合成光谱生成器
 │   ├── datasets.py               #   真实数据集加载器（细菌 / 油脂）与划分策略
 │   ├── classify.py               #   特征构造、PCA+分类器流水线、两种评估协议
-│   └── transfer.py               #   批次校正：导数 / 批次中心化 / CORAL 域对齐
+│   ├── transfer.py               #   批次校正：导数 / 批次中心化 / CORAL 域对齐
+│   └── augment.py                #   训练期增强：背景形状 / 平移 / 模糊 / 噪声
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
 ├── 03_load_dataset.py            # 数据：加载真实数据集、打印概览、画各类平均谱
 ├── 04_classify.py                # 识别：PCA+SVM 分类，对比随机划分与留一批次
 ├── 05_batch_effect.py            # 校正：八种预处理 × 两种协议的批次效应实验
+├── 06_augmentation.py            # 增强：训练期扰动 × 两种协议的增强实验
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── docs/                         # 技术报告
@@ -182,6 +209,7 @@ Raman_forRecognition/
 ├── dataset_overview.png          # 03 的各类平均光谱图
 ├── classification_result.png     # 04 的混淆矩阵与各折准确率
 ├── batch_effect_result.png       # 05 的各预处理两种协议对比
+├── augmentation_result.png       # 06 的增强配置两种协议对比
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -217,7 +245,8 @@ print("负值比例:", spec.negative_ratio())
 | P1 | 接入真实光谱数据集（Zenodo 15279321），统一格式与划分 | ✅ 已完成 |
 | P2 | PCA + SVM 分类基线，跑通第一个识别准确率 | ✅ 已完成 |
 | P3 | 批次效应校正实验（导数 / 批次中心化 / CORAL / 波段筛选） | ✅ 已完成（负结果） |
-| P4 | 数据驱动的批次不变性：训练增强或域对抗 | ⬜ 待开始 |
+| P4 | 数据驱动的批次不变性：训练增强 | ✅ 已完成（无显著提升） |
+| P5 | 分组优化（GroupDRO / IRM）或度量学习 | ⬜ 待开始 |
 | P4 | 开放集拒识 / 混合物解混 | ⬜ |
 | P5 | 工程化：CLI、单元测试、文档 | ⬜ |
 
