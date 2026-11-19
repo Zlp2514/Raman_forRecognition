@@ -20,7 +20,7 @@ import numpy as np
 
 from raman_rec import make_synthetic
 from raman_rec.paramselect import proxy_metrics, score_candidates
-from raman_rec.preprocess import PARAM_GRIDS, estimate_baseline
+from raman_rec.preprocess import DEFAULT_PARAMS, PARAM_GRIDS, estimate_baseline
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
@@ -60,8 +60,8 @@ def spearman(a, b) -> float:
     return float(spearmanr(a, b).correlation)
 
 
-def run_validate(no_show: bool) -> int:
-    spec = make_synthetic()
+def run_validate(no_show: bool, noise: float = 5.0) -> int:
+    spec = make_synthetic(noise_std=noise)
     print(f"合成光谱：{len(spec)} 点，噪声 σ = {spec.meta['noise_std']:.2f}")
 
     all_rows: list[dict] = []
@@ -114,7 +114,7 @@ def run_validate(no_show: bool) -> int:
     for method, _n, _rmse_list, rows, _rho in summary:
         best_proxy = max(rows, key=lambda r: r["composite"])
         best_true = min(rows, key=lambda r: r["rmse"])
-        default_params = PARAM_GRIDS[method][0]
+        default_params = dict(DEFAULT_PARAMS[method])
         default_row = next((r for r in rows if r["params"] == default_params), rows[0])
         rank = sorted(rows, key=lambda r: r["rmse"]).index(best_proxy) + 1
         print(f"{method:<16}{default_row['rmse']:>14.3f}{best_proxy['rmse']:>14.3f}"
@@ -194,7 +194,7 @@ def run_apply(no_show: bool, n_calib: int = 60, method: str = "imodpoly") -> int
         return out
 
     # 步骤 1：默认参数
-    default_params = dict(PARAM_GRIDS[method][0])
+    default_params = dict(DEFAULT_PARAMS[method])
     print(f"默认参数：{default_params}")
     X_default = correct_all(default_params)
 
@@ -242,26 +242,30 @@ def run_apply(no_show: bool, n_calib: int = 60, method: str = "imodpoly") -> int
     print("说明：真实数据无真值，只能用下游识别准确率作为外部判据；")
     print("      准确率变化在 ±1 个标准差内应视为无差异。")
 
-    lines = ["scheme,params,loo_accuracy,loo_std",
-             f"default,\"{default_params}\",{acc_d:.4f},{std_d:.4f}",
-             f"proxy_selected,\"{chosen}\",{acc_c:.4f},{std_c:.4f}"]
-    (ROOT / "param_selection_apply.csv").write_text("\n".join(lines) + "\n",
-                                                    encoding="utf-8-sig")
-    print("表已保存:", ROOT / "param_selection_apply.csv")
+    lines = ["method,scheme,params,loo_accuracy,loo_std",
+             f"{method},default,\"{default_params}\",{acc_d:.4f},{std_d:.4f}",
+             f"{method},proxy_selected,\"{chosen}\",{acc_c:.4f},{std_c:.4f}"]
+    out = ROOT / f"param_selection_apply_{method}.csv"
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8-sig")
+    print("表已保存:", out)
     return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="无真值基线参数选择")
     parser.add_argument("--stage", choices=["validate", "apply"], default="validate")
+    parser.add_argument("--method", default="imodpoly", choices=list(PARAM_GRIDS),
+                        help="apply 阶段使用的方法")
+    parser.add_argument("--noise", type=float, default=5.0,
+                        help="validate 阶段合成谱的噪声标准差，默认 5.0")
     parser.add_argument("--no-show", action="store_true")
     args = parser.parse_args()
     if args.no_show:
         matplotlib.use("Agg")
 
     if args.stage == "validate":
-        return run_validate(args.no_show)
-    return run_apply(args.no_show)
+        return run_validate(args.no_show, args.noise)
+    return run_apply(args.no_show, method=args.method)
 
 
 if __name__ == "__main__":

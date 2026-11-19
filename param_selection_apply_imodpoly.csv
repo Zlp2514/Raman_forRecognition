@@ -1,0 +1,3 @@
+﻿method,scheme,params,loo_accuracy,loo_std
+imodpoly,default,"{'poly_order': 5}",0.8414,0.0699
+imodpoly,proxy_selected,"{'poly_order': 4}",0.8395,0.0676
