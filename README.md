@@ -99,6 +99,10 @@ python 04_classify.py --no-show                    # 两个数据集都跑
 python 04_classify.py --dataset oil --classifier lda
 ```
 
+> **方法学修正（2026-11-19）**：后续维度扫描发现，本节固定使用的 PCA=20 在细菌集上是次优取值。
+> 不降维时基线为 **随机 0.932 / 留批次 0.828**（差距 10.4 pt），下表数据请结合
+> 下文「维度扫描」一节阅读。
+
 ## 批次校正实验（负结果）
 
 > 详细技术报告（含逐方法失效机制、局限说明、可引用结论）：
@@ -156,6 +160,40 @@ python 05_batch_effect.py --no-show
 详细分析见 `experiments/2026-11-19-p4-augmentation.md`。连续两轮失败的共同结论：
 **批次效应需要被显式建模，而不是被随机化掉。**
 
+## 维度扫描：一次方法学修正
+
+原型分类实验（`prototype_result.png`）证明**换分类器没用**——欧氏/余弦/白化原型全面劣于 SVM
+（细菌 −9 至 −11 pt），说明各类在特征空间里并非紧凑球状，瓶颈不在决策边界。
+
+顺着这条线做维度敏感性检查，发现了一个更根本的问题：**此前所有实验固定 PCA=20，这个选择本身压低了性能。**
+
+| PCA 维数（bacterial） | 随机划分 | 留一批次 |
+|---|---|---|
+| 10 | 0.853 | 0.758 |
+| 20（此前基线） | 0.901 | 0.778 |
+| 50 | 0.885 | 0.795 |
+| 200 | 0.911 | 0.804 |
+| **不降维** | **0.932** | **0.828** |
+
+![维度扫描](dimension_sweep.png)
+
+三点结论：
+
+1. **细菌集上 PCA 是负收益**，维度越高越好；**油脂集几乎不受影响**（0.882–0.900）。
+   原因是 6 类近缘菌的判别信息分散在大量弱峰上，降维时被优先丢弃；而 8 类油靠少数强峰
+   （C–H 伸缩）就能分开，20 维已足够。
+2. **修正后的基线是 0.932 / 0.828**，批次差距从 12.6 pt 收窄到 10.4 pt，但问题依然存在。
+3. **P3 的负结论在全维下依然成立**：波段筛选 0.828→0.802、导数 0.828→0.737，
+   只有批次中心化 +0.6 pt（在标准差内）。
+
+> 方法学教训：当所有实验都固定在同一超参上时，验证的其实是"这个超参下的结论"，
+> 而不是结论本身。详见 `experiments/2026-11-19-p5-prototype-and-dimension.md`。
+
+```bash
+python 07_prototype.py --no-show      # 原型分类 vs SVM
+python 08_dimension_sweep.py --no-show # 维度扫描 + 全维复检
+```
+
 ## 六种方法的对比结果
 
 合成光谱（1600 点，噪声标准差 5.0，真实背景已知）：
@@ -191,13 +229,16 @@ Raman_forRecognition/
 │   ├── datasets.py               #   真实数据集加载器（细菌 / 油脂）与划分策略
 │   ├── classify.py               #   特征构造、PCA+分类器流水线、两种评估协议
 │   ├── transfer.py               #   批次校正：导数 / 批次中心化 / CORAL 域对齐
-│   └── augment.py                #   训练期增强：背景形状 / 平移 / 模糊 / 噪声
+│   ├── augment.py                #   训练期增强：背景形状 / 平移 / 模糊 / 噪声
+│   └── prototype.py              #   原型分类器：欧氏 / 余弦 / 白化
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
 ├── 03_load_dataset.py            # 数据：加载真实数据集、打印概览、画各类平均谱
 ├── 04_classify.py                # 识别：PCA+SVM 分类，对比随机划分与留一批次
 ├── 05_batch_effect.py            # 校正：八种预处理 × 两种协议的批次效应实验
 ├── 06_augmentation.py            # 增强：训练期扰动 × 两种协议的增强实验
+├── 07_prototype.py               # 分类器：原型 / kNN vs SVM
+├── 08_dimension_sweep.py         # 维度：PCA 维数扫描 + 全维复检
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── docs/                         # 技术报告
@@ -210,6 +251,8 @@ Raman_forRecognition/
 ├── classification_result.png     # 04 的混淆矩阵与各折准确率
 ├── batch_effect_result.png       # 05 的各预处理两种协议对比
 ├── augmentation_result.png       # 06 的增强配置两种协议对比
+├── prototype_result.png          # 07 的分类器对比
+├── dimension_sweep.png           # 08 的降维影响曲线
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -246,7 +289,8 @@ print("负值比例:", spec.negative_ratio())
 | P2 | PCA + SVM 分类基线，跑通第一个识别准确率 | ✅ 已完成 |
 | P3 | 批次效应校正实验（导数 / 批次中心化 / CORAL / 波段筛选） | ✅ 已完成（负结果） |
 | P4 | 数据驱动的批次不变性：训练增强 | ✅ 已完成（无显著提升） |
-| P5 | 分组优化（GroupDRO / IRM）或度量学习 | ⬜ 待开始 |
+| P5 | 分类器对比（原型/kNN）与维度敏感性修正 | ✅ 已完成（换分类器无效，发现 PCA=20 压低基线） |
+| P6 | 在全维基线上做分组优化（GroupDRO / IRM）或度量学习 | ⬜ 待开始 |
 | P4 | 开放集拒识 / 混合物解混 | ⬜ |
 | P5 | 工程化：CLI、单元测试、文档 | ⬜ |
 
