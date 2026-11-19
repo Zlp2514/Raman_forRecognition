@@ -558,6 +558,7 @@ Raman_forRecognition/
 ├── 19_paired_test.py             # 配对检验：逐折 Wilcoxon 符号秩检验
 ├── 20_openset_perclass.py        # 拒识：分类别 AUROC（论文图 3）
 ├── 21_protocol_gap.py            # 协议：双协议差距与逐批次画像（论文图 1）
+├── 22_rejection_tradeoff.py      # 拒识：净收益扫描与 1/N 上限（论文图 4）
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── tests/test_core.py            # 单元测试（unittest，23 个用例）
@@ -588,6 +589,7 @@ Raman_forRecognition/
 ├── paired_test.png               # 19 的配对检验分布
 ├── openset_perclass.png          # 20 的分类别拒识能力
 ├── protocol_gap.png              # 21 的双协议差距（论文图 1）
+├── rejection_ceiling.png         # 22 的拒识收益上限（论文图 4）
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -639,6 +641,7 @@ print("负值比例:", spec.negative_ratio())
 | P16 | 配对检验（9 折 Wilcoxon） | ✅ 已完成（三类"提升"全部不显著） |
 | P17 | 分类别拒识能力（论文图 3） | ✅ 已完成（AUROC 0.10–0.99，两数据集同模式） |
 | P18 | 双协议差距（论文图 1） | ✅ 已完成（随机 5 种子 vs 留批次，差距 6.7–9.9 pt） |
+| P19 | 拒识净收益扫描（论文图 4） | ✅ 已完成（留批次下恒为负，油脂几何上不可能盈利） |
 
 ## 环境
 
