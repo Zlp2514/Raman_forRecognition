@@ -4,9 +4,10 @@
 
 拉曼光谱测量中，样品本身的荧光会产生一条缓慢变化的背景，把窄的拉曼峰抬高、甚至淹没。这个项目用 pybaselines 提供的多种算法把这条背景估计出来并减掉，同时在同一份数据上横向比较六种方法的差异。
 
-> 📄 **完整实验报告：[跨批次拉曼光谱细菌鉴定的实验研究](docs/cross-batch-raman-report.md)**
-> —— 记录六轮实验（P2–P6）、四组负结果与一次方法学修正，结论是
-> 「SNV + 全维 + 线性 SVM 已是难以逾越的强基线（细菌 0.828 / 油脂 0.898）」。
+> 📄 **完整实验报告：[拉曼光谱细菌鉴定的实验研究](docs/raman-classification-report.md)**
+> —— 七轮实验（P2–P7）、六组负结果与一次方法学修正。结论：跨批次上
+> 「SNV + 全维 + 线性 SVM 已是强基线（细菌 0.828 / 油脂 0.898）」；
+> 拒识上「可行性由未知类的几何位置决定（AUROC 0.10–0.96），不由评分器决定」。
 
 ![六种基线方法对比](compare_result.png)
 
@@ -36,6 +37,40 @@ python 02_process_my_csv.py
 python compare_baseline_methods.py
 python compare_baseline_methods.py --csv my_raman.csv
 ```
+
+## 命令行用法
+
+`cli.py` 是面向日常使用的统一入口（`01_*.py`～`10_*.py` 则是实验复现脚本）：
+
+```bash
+# 查看数据集概览（类别分布、点数、位移范围）
+python cli.py info --dataset bacterial
+
+# 校正一条自己的两列 CSV，输出 *_corrected.csv 与图
+python cli.py preprocess my_raman.csv --method imodpoly --order 5
+
+# 只做归一化、换方法、指定输出位置
+python cli.py preprocess my_raman.csv --method airpls --normalize snv --out result.csv
+
+# 跑一次分类基线，同时报随机划分与留一批次两种协议
+python cli.py classify --dataset oil
+```
+
+```
+随机分层划分 : 准确率 0.964 | 宏平均 F1 0.964
+留一批次验证 : 平均 0.898 ± 0.119（7 折）
+两者差距     : +0.066
+```
+
+## 单元测试
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+23 个用例覆盖数据校验、归一化、寻峰、CSV 编码容错、基线校正、增强、原型分类与开放集评分。
+其中 `test_too_typical_unknown_is_undetectable` 直接复现了正文 P7 的核心发现：
+把未知样本取成类中心时，它比真实已知样本更"典型"，AUROC 降到 0.5 以下。
 
 ## 输入数据格式
 
@@ -292,6 +327,7 @@ Raman_forRecognition/
 │   ├── augment.py                #   训练期增强：背景形状 / 平移 / 模糊 / 噪声
 │   ├── prototype.py              #   原型分类器：欧氏 / 余弦 / 白化
 │   └── openset.py                #   开放集评分：margin / 原型距离 / 马氏距离
+├── cli.py                        # 命令行入口：info / preprocess / classify
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
 ├── 03_load_dataset.py            # 数据：加载真实数据集、打印概览、画各类平均谱
@@ -304,8 +340,9 @@ Raman_forRecognition/
 ├── 10_openset.py                 # 拒识：开放集识别（留一类作未知）
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
+├── tests/test_core.py            # 单元测试（unittest，23 个用例）
 ├── docs/                         # 技术报告
-│   ├── cross-batch-raman-report.md            # 完整实验报告（六轮实验总汇）
+│   ├── raman-classification-report.md         # 完整实验报告（七轮实验总汇）
 │   └── batch-correction-negative-result.md    # 批次校正负结果详细分析
 ├── my_raman.csv                  # 示例输入数据
 ├── quickstart_result.png         # 01 的输出图
@@ -359,7 +396,7 @@ print("负值比例:", spec.negative_ratio())
 | P6 | 全维复核增强 + 线性度量学习（LDA/收缩 LDA） | ✅ 已完成（均不及基线） |
 | P7 | 开放集拒识（未知物识别）与置信度校准 | ✅ 已完成（平均 AUROC 仅 0.52–0.67，类别差异极大） |
 | P8 | 非线性表征学习（1D-CNN + 域泛化）或扩充批次数据 | ⬜ |
-| P9 | 工程化：CLI、单元测试、文档 | ⬜ |
+| P9 | 工程化：CLI、单元测试、文档 | ✅ 已完成 |
 
 ## 环境
 
