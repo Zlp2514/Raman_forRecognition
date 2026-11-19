@@ -78,6 +78,7 @@ def recompute_classifiers(ds: Dataset) -> list[dict]:
     三个原型变体 + kNN(k=5)，协议与其它实验一致（留一批次，9 折）。
     """
     from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.preprocessing import StandardScaler
 
     from raman_rec.prototype import NearestPrototype
 
@@ -99,8 +100,10 @@ def recompute_classifiers(ds: Dataset) -> list[dict]:
             tr = np.where((groups != g) & (groups != ""))[0]
             if te.size == 0 or tr.size == 0:
                 continue
-            clf = factory().fit(X[tr], y[tr])
-            accs.append(float(np.mean(clf.predict(X[te]) == y[te])))
+            # 与项目管线一致：先 StandardScaler 再分类
+            sc = StandardScaler().fit(X[tr])
+            clf = factory().fit(sc.transform(X[tr]), y[tr])
+            accs.append(float(np.mean(clf.predict(sc.transform(X[te])) == y[te])))
         out.append({"category": "分类器替换", "method": name,
                     "loo": float(np.mean(accs)),
                     "source": "本脚本重算（全维）"})
