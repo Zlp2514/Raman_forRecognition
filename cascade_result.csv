@@ -1,0 +1,13 @@
+﻿dataset,protocol,scheme,closed_open_accuracy,pass_known,reject_unknown
+bacterial,random,svm,0.5691,0.9520,0.1987
+bacterial,random,gate,0.5133,0.9520,0.1987
+bacterial,random,casc,0.6223,0.9520,0.1987
+bacterial,loo_batch,svm,0.7214,0.9480,0.1513
+bacterial,loo_batch,gate,0.5668,0.9480,0.1513
+bacterial,loo_batch,casc,0.7070,0.9480,0.1513
+oil,random,svm,0.6699,0.9439,0.7714
+oil,random,gate,0.8687,0.9439,0.7714
+oil,random,casc,0.8808,0.9439,0.7714
+oil,loo_batch,svm,0.8013,0.7298,0.7679
+oil,loo_batch,gate,0.6991,0.7298,0.7679
+oil,loo_batch,casc,0.7324,0.7298,0.7679
