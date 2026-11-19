@@ -1,0 +1,6 @@
+﻿dataset,model,random_acc,loo_mean,loo_std,n_folds
+bacterial,1D-CNN,0.8190,0.7507,0.0385,9
+bacterial,1D-CNN+MixStyle,0.6219,0.7027,0.0858,9
+bacterial,MLP,0.9347,0.8343,0.0692,9
+oil,1D-CNN,0.9167,0.8304,0.1033,7
+oil,MLP,0.8988,0.8143,0.1034,7

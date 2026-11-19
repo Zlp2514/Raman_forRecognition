@@ -289,6 +289,34 @@ S-warneri 谱形结构较弱、更接近所有菌种的平均，经标准化后�
 
 详细分析见 `experiments/2026-11-19-p7-openset.md`（含两个实现 bug 的排查过程）。
 
+## 非线性模型实验（P8，仍未突破）
+
+前七轮都在线性框架内。最后一轮换非线性模型，回答"瓶颈是表达力还是数据"。
+
+| 数据集 | 模型 | 随机划分 | 留一批次 | 相对基线 |
+|---|---|---|---|---|
+| bacterial | **线性 SVM（基线）** | 0.932 | **0.828** | — |
+| bacterial | MLP（128 隐单元） | 0.935 | 0.834 ± 0.069 | +0.6（噪声内） |
+| bacterial | 1D-CNN | 0.819 | 0.751 ± 0.039 | −7.7 |
+| oil | **线性 SVM（基线）** | 0.964 | **0.898** | — |
+| oil | MLP | 0.899 | 0.814 ± 0.103 | −8.4 |
+| oil | 1D-CNN | 0.917 | 0.830 ± 0.103 | −6.8 |
+
+![非线性模型实验](neural_result.png)
+
+**非线性没有带来提升。** 更重要的是诊断结果：CNN 的训练损失能降到 **0.001**，
+测试却只有 0.68——模型容量绰绰有余，缺的是**能覆盖变异的数据**。
+10 万参数配 2400 个样本，任何强表达力模型都会优先记住样本而非学习规律。
+
+> 这也解释了为什么线性 SVM 这么难超越：在 1376 维上它等价于"模板匹配"，
+> 而这个假设恰好匹配拉曼光谱的物理结构（每种物质有一组特征峰位）。
+
+MixStyle 域泛化尝试为负增益（留批次 0.751→0.703），属实现未调优，详见
+`experiments/2026-11-19-p8-neural.md`。
+
+> ⚠️ 运行 `11_neural.py` 需额外安装 PyTorch：
+> `pip install torch --index-url https://download.pytorch.org/whl/cpu`（约 200 MB）
+
 ## 六种方法的对比结果
 
 合成光谱（1600 点，噪声标准差 5.0，真实背景已知）：
@@ -338,6 +366,7 @@ Raman_forRecognition/
 ├── 08_dimension_sweep.py         # 维度：PCA 维数扫描 + 全维复检
 ├── 09_metric_learning.py         # 度量：LDA（含收缩）与分类器组合
 ├── 10_openset.py                 # 拒识：开放集识别（留一类作未知）
+├── 11_neural.py                  # 非线性：MLP 与 1D-CNN（需 PyTorch）
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── tests/test_core.py            # 单元测试（unittest，23 个用例）
@@ -356,6 +385,7 @@ Raman_forRecognition/
 ├── dimension_sweep.png           # 08 的降维影响曲线
 ├── metric_learning_result.png    # 09 的度量学习对比
 ├── openset_result.png            # 10 的开放集评分器对比
+├── neural_result.png             # 11 的非线性模型对比
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -395,7 +425,7 @@ print("负值比例:", spec.negative_ratio())
 | P5 | 分类器对比（原型/kNN）与维度敏感性修正 | ✅ 已完成（换分类器无效，发现 PCA=20 压低基线） |
 | P6 | 全维复核增强 + 线性度量学习（LDA/收缩 LDA） | ✅ 已完成（均不及基线） |
 | P7 | 开放集拒识（未知物识别）与置信度校准 | ✅ 已完成（平均 AUROC 仅 0.52–0.67，类别差异极大） |
-| P8 | 非线性表征学习（1D-CNN + 域泛化）或扩充批次数据 | ⬜ |
+| P8 | 非线性表征学习（MLP / 1D-CNN / MixStyle） | ✅ 已完成（未突破线性基线） |
 | P9 | 工程化：CLI、单元测试、文档 | ✅ 已完成 |
 
 ## 环境
