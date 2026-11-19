@@ -1,0 +1,5 @@
+﻿dataset,protocol,accuracy,macro_f1,n_samples
+bacterial,random_split,0.903941,0.903598,812
+bacterial,leave_one_out,0.777736,,2710
+oil,random_split,0.982143,0.982051,168
+oil,leave_one_out,0.891071,,560

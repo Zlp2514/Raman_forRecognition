@@ -74,6 +74,31 @@ python 03_load_dataset.py
 
 > Guo, S. *Raman spectral datasets from single bacterial cells and different oil*. Zenodo (2025). doi:10.5281/zenodo.15279321
 
+## 识别实验结果
+
+流水线：SNV 归一化 → StandardScaler → PCA(20) → 线性 SVM。两种评估协议对比：
+
+| 数据集 | 随机划分 | 留一批次验证 | 差距 |
+|---|---|---|---|
+| bacterial（6 类菌，2710 条） | **0.904** | **0.778 ± 0.052** | **+0.126** |
+| oil（8 类油，560 条） | **0.982** | **0.891 ± 0.118** | **+0.091** |
+
+![分类结果](classification_result.png)
+
+**这是本项目目前最值得关注的一组数字。** 随机划分看起来接近完美，但换成"留出一整个测量批次做测试"，
+准确率就掉了 9–13 个百分点。说明模型学到的特征里有相当一部分是"这一批测量长什么样"（批次偏移），
+而不是"这是什么物质"。
+
+混淆矩阵还显示，细菌集的错误高度集中在 **E-coli ↔ R-terrigena** 这一对近缘种上（互相误判 31 条与 15 条），
+其余四类的识别率都在 95% 以上。近缘种分离、跨批次泛化，是两个真实的开放问题。
+
+复现：
+
+```bash
+python 04_classify.py --no-show                    # 两个数据集都跑
+python 04_classify.py --dataset oil --classifier lda
+```
+
 ## 六种方法的对比结果
 
 合成光谱（1600 点，噪声标准差 5.0，真实背景已知）：
@@ -106,10 +131,12 @@ Raman_forRecognition/
 │   ├── preprocess.py             #   七种基线方法的统一入口 + 参数网格
 │   ├── io.py                     #   两列 CSV 读写（自动处理 GBK/UTF-8 与表头）
 │   ├── synthetic.py              #   带真值的合成光谱生成器
-│   └── datasets.py               #   真实数据集加载器（细菌 / 油脂）与划分策略
+│   ├── datasets.py               #   真实数据集加载器（细菌 / 油脂）与划分策略
+│   └── classify.py               #   特征构造、PCA+分类器流水线、两种评估协议
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
 ├── 03_load_dataset.py            # 数据：加载真实数据集、打印概览、画各类平均谱
+├── 04_classify.py                # 识别：PCA+SVM 分类，对比随机划分与留一批次
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── my_raman.csv                  # 示例输入数据
@@ -117,6 +144,7 @@ Raman_forRecognition/
 ├── my_raman_corrected.png        # 02 的输出图
 ├── compare_result.png            # 对比脚本的三联图
 ├── dataset_overview.png          # 03 的各类平均光谱图
+├── classification_result.png     # 04 的混淆矩阵与各折准确率
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -150,8 +178,8 @@ print("负值比例:", spec.negative_ratio())
 |---|---|---|
 | P0 | 代码重构为包结构，统一数据与预处理入口 | ✅ 已完成 |
 | P1 | 接入真实光谱数据集（Zenodo 15279321），统一格式与划分 | ✅ 已完成 |
-| P2 | PCA + SVM 分类基线，跑通第一个识别准确率 | ⬜ 待开始 |
-| P3 | 1D-CNN 对照实验 | ⬜ |
+| P2 | PCA + SVM 分类基线，跑通第一个识别准确率 | ✅ 已完成 |
+| P3 | 1D-CNN 对照实验（同样用留一批次协议评估） | ⬜ 待开始 |
 | P4 | 开放集拒识 / 混合物解混 | ⬜ |
 | P5 | 工程化：CLI、单元测试、文档 | ⬜ |
 
@@ -160,6 +188,24 @@ print("负值比例:", spec.negative_ratio())
 - Python 3.13
 - numpy 2.5 / scipy 1.18 / matplotlib 3.11
 - pybaselines 1.2.x
+
+## 常见问题
+
+**`ImportError: DLL load failed ... 应用程序控制策略已阻止此文件`**
+
+Windows 的应用控制策略（Smart App Control / WDAC）会拦截新下载的未签名编译扩展（`.pyd` / `.dll`），
+典型表现是 `import sklearn` 或 `import pandas` 时报这个错。解除方法（PowerShell）：
+
+```powershell
+Get-ChildItem -Path ".venv\Lib\site-packages" -Recurse -File |
+  Where-Object { $_.Extension -in ".dll",".pyd" } | Unblock-File
+```
+
+个别情况下需要对新安装的包里所有文件执行一次 `Unblock-File` 才能全部加载。
+
+**`PermissionError: [Errno 13] ... .csv`**
+
+文件正被 WPS / Excel 打开，Windows 下它们会对文件加独占锁。关掉软件再跑脚本即可。
 
 ## 参考与致谢
 
