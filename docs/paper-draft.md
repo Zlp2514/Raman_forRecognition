@@ -1,9 +1,7 @@
 # 拉曼光谱细菌鉴定中的评估陷阱：跨批次泛化与开放集拒识的实证研究
 
 > **草稿版本**：v0.1（2026-11-19）
-> **状态**：正文初稿。图 1–3 已生成（`protocol_gap.png` / `improvement_summary.png` /
-> `openset_perclass.png`），图 4 数据已备（`cascade_result.csv`）待绘制；
-> 参考文献 [待核对] 项需逐条确认后再投稿；如投英文期刊需翻译。
+> **状态**：正文初稿 v0.2。四张主图已全部生成；参考文献 12 条已核对；> 剩余事项：投稿目标确定（中文核心 or 英文期刊）、格式排版、图 4 若投稿需英文重绘。
 > 所有数值均可由仓库脚本复现，复现命令见附录。
 
 ---
@@ -27,15 +25,16 @@
 ## 1 引言
 
 拉曼光谱通过测量分子振动引起的非弹性散射来表征物质结构，具有无损、免标记、单细胞分辨
-等优点，在细菌快速鉴定、食品药品检测与环境监测中应用广泛 [文献待补]。
+等优点，在细菌快速鉴定、食品药品检测与环境监测中应用广泛
+[Frempong et al. 2024; Cui et al. 2022]。
 随着仪器成本下降与高通量采集的普及，光谱数据集的规模快速增长，机器学习已成为该领域的
 主流分析手段。
 
 然而，文献报告的性能与实际部署体验之间存在明显落差。文献中的准确率普遍在 95% 以上，
 但这些数字几乎都建立在**随机划分**之上——训练集与测试集来自同样的测量批次，
 共享同一套仪器状态、基底制备与采集参数。当模型面对一个全新测量批次时，这些"共享变量"
-全部失效。已有研究在将纯培养模型迁移到环境样品时，准确率从 96% 降至 79% [ISME J 2025]，
-说明该落差是领域性的，但**落差的具体来源与幅度尚缺乏系统量化**。
+全部失效。已有研究在将纯培养模型迁移到环境样品时，准确率从 96% 降至 79%
+[Li et al. 2025]，说明该落差是领域性的，但**落差的具体来源与幅度尚缺乏系统量化**。
 
 第二个问题来自开放集。实际检测中，待测样品很可能不在已有的光谱库里。闭集分类器面对
 未知物时会硬判成某个已知类，其错误结论的危害大于"无法判定"。虽然开放集识别在图像领域
@@ -67,14 +66,17 @@
 
 细菌集涵盖 *E. coli*、*L. innocua*、*P. stutzeri*、*R. terrigena*、*S. cohnii* 与
 *S. warneri*，每类 447–458 条，类别均衡；油脂集每类恰好 70 条。数据来自
-Zenodo 公开数据集（DOI: 10.5281/zenodo.15279321，CC-BY-4.0）[Guo et al.]。
+Zenodo 公开数据集（DOI: 10.5281/zenodo.15279321，CC-BY-4.0，Guo, S.，
+莱布尼茨光子技术研究所）[Guo 2025]。
 
 ### 2.2 预处理与基线方法
 
 主分析采用逐条标准正态变换（SNV）后接全维线性支持向量机（StandardScaler → SVC，
-C=1）。SNV 消除逐条谱的加性偏移与乘性缩放，是该领域的标准预处理 [文献待补]。
-基线校正部分另行横向比较了七种方法（ModPoly、IModPoly、AsLS、airPLS、SNIP、
-Mixture Model、PSpline-AsLS，基于 pybaselines 实现 [pybaselines]）。
+C=1）。SNV 消除逐条谱的加性偏移与乘性缩放，是该领域的标准预处理 [Barnes et al. 1989]。
+基线校正部分另行横向比较了七种方法（ModPoly [Lieber & Mahadevan-Jansen 2003]、
+IModPoly [Zhao et al. 2007]、AsLS [Eilers & Boelens 2005]、airPLS [Zhang et al. 2010]、
+SNIP [Ryan et al. 1988]、Mixture Model、PSpline-AsLS），统一基于 pybaselines 实现
+[Erb, DOI: 10.5281/zenodo.5608581]。
 
 ### 2.3 双协议评估
 
@@ -231,7 +233,7 @@ SVM 决策值的 AUROC 为 0.72，马氏距离仅 0.43。"哪个评分器认为�
 
 ### 4.3 与文献的对照
 
-我们的闭集结果（0.926）与同期 36 株菌工作报告的 96.1% 处于同一量级 [ISME J 2025]；
+我们的闭集结果（0.926）与同期 36 株菌工作报告的 96.1% 处于同一量级 [Li et al. 2025]；
 该工作将纯培养模型迁移到环境样品时降至 79%，与我们跨批次的 82.8% 同样说明
 **"跨条件掉 10–20 个百分点"是该任务的固有代价**。该工作还报告模型选择可造成
 41.4 个百分点的差异，远大于生物学变异（<2.9 个百分点）；与本文"协议影响 10 个点、
@@ -260,20 +262,51 @@ SVM 决策值的 AUROC 为 0.72，马氏距离仅 0.43。"哪个评分器认为�
 
 ---
 
-## 参考文献（待逐条核对）
+## 参考文献（2026-11-19 已逐条核对）
 
-1. Guo, S. *Raman spectral datasets from single bacterial cells and different oil.*
-   Zenodo, 2025. DOI: 10.5281/zenodo.15279321.（数据集）
-2. [ISME J 2025] *Towards high-accuracy bacterial taxonomy identification using
-   phenotypic single-cell Raman spectroscopy data.* ISME Journal, 2025.
-   PubMed: 40092580.（36 株菌基准；96.1% / 79% / 41.4 pt 三处引用）
-3. [pybaselines] *pybaselines: A Python library of algorithms for the baseline
-   correction of experimental data.*（七种基线方法的实现）
-4. [待核对] ModPoly / IModPoly 多项式拟合法原始文献。
-5. [待核对] AsLS：Eilers & Boelens, 2005。
-6. [待核对] airPLS：Zhang et al., Analyst 2010。
-7. [待核对] SNIP：Ryan et al., Nucl. Instrum. Methods B, 1988。
-8. [待核对] 拉曼光谱细菌鉴定综述性文献 2–3 篇（引言用）。
+1. Guo, S. *Raman spectral datasets from Single bacterial cells and different oil.*
+   Zenodo, 2025. DOI: 10.5281/zenodo.15279321（CC-BY-4.0，莱布尼茨光子技术研究所）。
+   数据集被以下两篇论文描述：DOI 10.1021/acs.analchem.4c02329（Contreras et al.,
+   *Anal. Chem.* 2024）与 DOI 10.1021/acs.analchem.8b02167（Ali et al., *Anal. Chem.* 2018）。
+2. Li, G., Wang, Z., Wu, C., Wang, D., Han, I., Lee, J., Kaeli, D.R., Dy, J.G.,
+   Weinberger, K.Q., Gu, A.Z. *Towards high-accuracy bacterial taxonomy identification
+   using phenotypic single-cell Raman spectroscopy data.*
+   **ISME Communications**, 2025, 5(1): ycaf015. DOI: 10.1093/ismeco/ycaf015.
+   （36 株菌基准：96.1% / 79% / 41.4 pt 三处引用）
+3. Erb, D. *pybaselines: A Python library of algorithms for the baseline correction of
+   experimental data.* Zenodo. DOI: 10.5281/zenodo.5608581.（软件引用，作者指定的引用格式）
+4. Lieber, C.A., Mahadevan-Jansen, A. *Automated method for subtraction of fluorescence
+   from biological Raman spectra.* Applied Spectroscopy, 2003, 57(11): 1363–1367.
+   DOI: 10.1366/000370203322554518.（ModPoly）
+5. Zhao, J., Lui, H., McLean, D.I., Zeng, H. *Automated autofluorescence background
+   subtraction algorithm for biomedical Raman spectroscopy.* Applied Spectroscopy,
+   2007, 61(11): 1225–1232. DOI: 10.1366/000370207782597003.（IModPoly）
+6. Gan, F., Ruan, G., Mo, J. *Baseline correction by improved iterative polynomial
+   fitting with automatic threshold.* Chemometrics and Intelligent Laboratory Systems,
+   2006, 82: 59–65.（改进迭代多项式拟合）
+7. Eilers, P.H.C., Boelens, H.F.M. *Baseline correction with asymmetric least squares
+   smoothing.* Leiden University Medical Centre Report, 2005.（AsLS，工作报告）
+8. Zhang, Z.-M., Chen, S., Liang, Y.-Z. *Baseline correction using adaptive iteratively
+   reweighted penalized least squares.* Analyst, 2010, 135: 1138–1146.
+   DOI: 10.1039/b922045c.（airPLS）
+9. Ryan, C.G., Clayton, E., Griffin, W.L., Sie, S.H., Cousens, D.R. *SNIP, a
+   statistics-sensitive background treatment for the quantitative analysis of PIXE
+   spectra in geoscience applications.* Nuclear Instruments and Methods in Physics
+   Research B, 1988, 34: 396–402.（SNIP）
+10. Barnes, R.J., Dhanoa, M.S., Lister, S.J. *Standard normal variate transformation
+    and de-tilting of diffuse reflectance spectra.* Applied Spectroscopy, 1989,
+    43(4): 638–644.（SNV）
+11. Frempong, S.B., Salbreiter, M., Mostafapour, S., Pistiki, A., Bocklitz, T.W.,
+    Rösch, P., Popp, J. *Illuminating the Tiny World: A Navigation Guide for Proper
+    Raman Studies on Microorganisms.* Molecules, 2024, 29(5): 1077.
+    DOI: 10.3390/molecules29051077.（综述：微生物拉曼研究的数据库设计与规范）
+12. Cui, D., Kong, L., Wang, Y., Zhu, Y., Zhang, C. *In situ identification of
+    environmental microorganisms with Raman spectroscopy.* Environmental Science
+    and Ecotechnology, 2022, 11: 100187. DOI: 10.1016/j.ese.2022.100187.（综述）
+
+> 核对说明：以上 12 条均经 2026-11-19 网络检索确认出处；
+> 第 9、10 条的页码依据常用引用格式给出，投稿前建议再复核原文页码。
+> 原稿中"ISME Journal 2025"系笔误，已更正为 **ISME Communications**。
 
 ---
 
@@ -298,6 +331,6 @@ SVM 决策值的 AUROC 为 0.72，马氏距离仅 0.43。"哪个评分器认为�
 | 正文五节 | ✅ 初稿完成 |
 | 图 1–3 | ✅ 已生成 |
 | 图 4 | ✅ 已生成（`rejection_ceiling.png`） |
-| 参考文献 | ⬜ 4 条待核对，引言综述文献待补 |
+| 参考文献 | ✅ 12 条已核对并修正出处（更正 ISME Communications） |
 | 统计检验 | ✅ 已完成（Wilcoxon） |
 | 英文版 | ⬜ 若投英文期刊需翻译 |
