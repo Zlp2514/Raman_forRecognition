@@ -390,8 +390,21 @@ python 13_library_match.py --sim deriv --no-show   # 导数相关
 > 这是评估这类改进时最容易骗过自己的地方：只看开放集准确率会以为方法变好了，
 > 把 AUROC 单列出来才看得出真正的可分性没变。详见 `experiments/2026-11-19-p11b-library-v2.md`。
 
+**换到油脂集（8 类食用油），结论完全不同：**
+
+| | 细菌（6 类近缘种） | 油脂（8 类食用油） |
+|---|---|---|
+| 闭集准确率（改进） | 0.728 | **0.941** |
+| AUROC（改进） | 0.573 | **0.848** |
+| 可用性判断 | 几乎不可分 | 基本可分 |
+
+八种油在碳氢伸缩区（约 2900 cm⁻¹）就有明显分组差异，整谱相关足以应付；
+六种近缘菌的差异分散在大量弱峰上，等权相关抓不住。
+**库匹配的可行性与"类别差异大小"强相关，不是算法本身好坏的问题。**
+
 ```bash
-python 14_library_match_v2.py --no-show
+python 14_library_match_v2.py --dataset bacterial --no-show
+python 14_library_match_v2.py --dataset oil --no-show
 ```
 
 ## 无真值选参实验（P10，结论：能力有限）
@@ -492,7 +505,8 @@ Raman_forRecognition/
 ├── neural_result.png             # 11 的非线性模型对比
 ├── param_selection_validate.png  # 12 的代理指标验证
 ├── library_match_result_raw.png  # 13 的库匹配结果
-├── library_v2_result_bacterial.png # 14 的改进版对比
+├── library_v2_result_bacterial.png # 14 的改进版对比（细菌）
+├── library_v2_result_oil.png     # 14 的改进版对比（油脂）
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt

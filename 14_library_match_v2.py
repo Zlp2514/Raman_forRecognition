@@ -153,11 +153,15 @@ def plot_compare(res: dict, out_path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="库匹配改进版对比")
     parser.add_argument("--dataset", choices=["bacterial", "oil"], default="bacterial")
+    parser.add_argument("--keep-rate", type=float, default=0.95,
+                        help="已知类接受率，越小阈值越松")
     parser.add_argument("--no-show", action="store_true")
     args = parser.parse_args()
     if args.no_show:
         matplotlib.use("Agg")
 
+    global KEEP_RATE
+    KEEP_RATE = args.keep_rate
     ds = (load_bacterial(DATA_DIR / "Bacterial_data") if args.dataset == "bacterial"
           else load_oil(DATA_DIR / "Oil_data"))
     X, y, groups = prepare_matrix(ds, normalize=None)
