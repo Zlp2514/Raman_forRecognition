@@ -224,6 +224,36 @@ python 08_dimension_sweep.py --no-show # 维度扫描 + 全维复检
 > 换分类器（原型/kNN）、改输入（导数/CORAL/波段）、加随机增强、学线性度量，
 > 四类尝试全部无效。进一步的提升需要非线性表征学习，或更多批次的数据。
 
+## 开放集实验：模型能否识别"没见过的东西"
+
+前面的实验都在问"分得准不准"，这一轮问另一个问题：**遇到训练时没见过的物质，模型会不会硬猜？**
+
+留一类法：每次把 1 类整体排除在训练外当作"未知物"，测试时已知与未知混在一起。
+
+| 评分器 | bacterial 留批次 AUROC | oil 留批次 AUROC |
+|---|---|---|
+| SVM 决策值 | 0.591 | 0.415 |
+| 原型距离 | 0.543 | 0.668 |
+| 马氏距离 | 0.519 | 0.647 |
+
+![开放集实验](openset_result.png)
+
+**平均 AUROC 只有 0.52–0.67，勉强高于随机猜测。** 但真正值得注意的是分类别的差异：
+
+| 未知类（马氏距离） | AUROC | | 未知类 | AUROC |
+|---|---|---|---|---|
+| P-stutzeri | **0.96** | | S-cohnii | 0.46 |
+| L-innocua | 0.69 | | E-coli | 0.44 |
+| R-terrigena | 0.47 | | S-warneri | **0.10** |
+
+**同一套评分器，对 P-stutzeri 能到 0.96，对 S-warneri 只有 0.10。** 标准差 0.26，比均值还大。
+
+原因是距离类方法的前提——"未知物离已知类远"——在近缘物种上不成立：
+S-warneri 谱形结构较弱、更接近所有菌种的平均，经标准化后落在特征空间的**中心区域**，
+而中心恰恰离所有类中心都近。**越"平庸"的未知物越难被拒识**，这是异常检测的经典困境。
+
+详细分析见 `experiments/2026-11-19-p7-openset.md`（含两个实现 bug 的排查过程）。
+
 ## 六种方法的对比结果
 
 合成光谱（1600 点，噪声标准差 5.0，真实背景已知）：
@@ -260,7 +290,8 @@ Raman_forRecognition/
 │   ├── classify.py               #   特征构造、PCA+分类器流水线、两种评估协议
 │   ├── transfer.py               #   批次校正：导数 / 批次中心化 / CORAL 域对齐
 │   ├── augment.py                #   训练期增强：背景形状 / 平移 / 模糊 / 噪声
-│   └── prototype.py              #   原型分类器：欧氏 / 余弦 / 白化
+│   ├── prototype.py              #   原型分类器：欧氏 / 余弦 / 白化
+│   └── openset.py                #   开放集评分：margin / 原型距离 / 马氏距离
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
 ├── 03_load_dataset.py            # 数据：加载真实数据集、打印概览、画各类平均谱
@@ -270,6 +301,7 @@ Raman_forRecognition/
 ├── 07_prototype.py               # 分类器：原型 / kNN vs SVM
 ├── 08_dimension_sweep.py         # 维度：PCA 维数扫描 + 全维复检
 ├── 09_metric_learning.py         # 度量：LDA（含收缩）与分类器组合
+├── 10_openset.py                 # 拒识：开放集识别（留一类作未知）
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── docs/                         # 技术报告
@@ -286,6 +318,7 @@ Raman_forRecognition/
 ├── prototype_result.png          # 07 的分类器对比
 ├── dimension_sweep.png           # 08 的降维影响曲线
 ├── metric_learning_result.png    # 09 的度量学习对比
+├── openset_result.png            # 10 的开放集评分器对比
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -324,7 +357,7 @@ print("负值比例:", spec.negative_ratio())
 | P4 | 数据驱动的批次不变性：训练增强 | ✅ 已完成（无显著提升） |
 | P5 | 分类器对比（原型/kNN）与维度敏感性修正 | ✅ 已完成（换分类器无效，发现 PCA=20 压低基线） |
 | P6 | 全维复核增强 + 线性度量学习（LDA/收缩 LDA） | ✅ 已完成（均不及基线） |
-| P7 | 开放集拒识（未知物识别）与置信度校准 | ⬜ 待开始 |
+| P7 | 开放集拒识（未知物识别）与置信度校准 | ✅ 已完成（平均 AUROC 仅 0.52–0.67，类别差异极大） |
 | P8 | 非线性表征学习（1D-CNN + 域泛化）或扩充批次数据 | ⬜ |
 | P9 | 工程化：CLI、单元测试、文档 | ⬜ |
 
