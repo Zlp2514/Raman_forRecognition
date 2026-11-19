@@ -99,6 +99,34 @@ python 04_classify.py --no-show                    # 两个数据集都跑
 python 04_classify.py --dataset oil --classifier lda
 ```
 
+## 批次校正实验（负结果）
+
+针对上面的 9–13 点差距，测试了三种**无需标签**的批次校正手段，结果**全部无效**：
+
+| 预处理 | bacterial 留批次 | 相对 SNV | oil 留批次 | 相对 SNV |
+|---|---|---|---|---|
+| raw（不处理） | 0.759 | −1.9 pt | 0.763 | −12.9 pt |
+| **SNV（基线）** | **0.778** | — | **0.891** | — |
+| SNV + 一阶导数 | 0.642 | **−13.6 pt** | 0.861 | −3.0 pt |
+| SNV + 批次中心化 | 0.784 | +0.6 pt | 0.857 | −3.4 pt |
+| SNV + CORAL 对齐 | 0.698 | **−8.1 pt** | 0.863 | −2.9 pt |
+| SNV + 指纹区(500–1800) | 0.748 | −3.0 pt | 0.882 | −0.9 pt |
+
+![批次校正实验](batch_effect_result.png)
+
+**唯一正增益（+0.6 pt）小于一个标准差（±7.9 pt），不构成有效提升。**
+
+原因分析：SNV 逐条减均值除以标准差，恰好抵消了跨批次最易变化的加性偏移与乘性缩放；
+剩下的差异是峰位微移、峰宽变化等非线性成分，线性变换处理不了。导数放大噪声、
+批次中心化连带减掉类别共性、CORAL 的单源域假设在多批次训练集上不成立。
+
+详细分析见 `experiments/2026-11-19-p3-batch-correction.md`。**这个负结果本身有价值**：
+它说明浅层预处理已到瓶颈，提升必须来自数据驱动的不变性（增强 / 域对抗）或度量学习。
+
+```bash
+python 05_batch_effect.py --no-show
+```
+
 ## 六种方法的对比结果
 
 合成光谱（1600 点，噪声标准差 5.0，真实背景已知）：
@@ -132,11 +160,13 @@ Raman_forRecognition/
 │   ├── io.py                     #   两列 CSV 读写（自动处理 GBK/UTF-8 与表头）
 │   ├── synthetic.py              #   带真值的合成光谱生成器
 │   ├── datasets.py               #   真实数据集加载器（细菌 / 油脂）与划分策略
-│   └── classify.py               #   特征构造、PCA+分类器流水线、两种评估协议
+│   ├── classify.py               #   特征构造、PCA+分类器流水线、两种评估协议
+│   └── transfer.py               #   批次校正：导数 / 批次中心化 / CORAL 域对齐
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
 ├── 03_load_dataset.py            # 数据：加载真实数据集、打印概览、画各类平均谱
 ├── 04_classify.py                # 识别：PCA+SVM 分类，对比随机划分与留一批次
+├── 05_batch_effect.py            # 校正：八种预处理 × 两种协议的批次效应实验
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── my_raman.csv                  # 示例输入数据
@@ -145,6 +175,7 @@ Raman_forRecognition/
 ├── compare_result.png            # 对比脚本的三联图
 ├── dataset_overview.png          # 03 的各类平均光谱图
 ├── classification_result.png     # 04 的混淆矩阵与各折准确率
+├── batch_effect_result.png       # 05 的各预处理两种协议对比
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -179,7 +210,8 @@ print("负值比例:", spec.negative_ratio())
 | P0 | 代码重构为包结构，统一数据与预处理入口 | ✅ 已完成 |
 | P1 | 接入真实光谱数据集（Zenodo 15279321），统一格式与划分 | ✅ 已完成 |
 | P2 | PCA + SVM 分类基线，跑通第一个识别准确率 | ✅ 已完成 |
-| P3 | 1D-CNN 对照实验（同样用留一批次协议评估） | ⬜ 待开始 |
+| P3 | 批次效应校正实验（导数 / 批次中心化 / CORAL / 波段筛选） | ✅ 已完成（负结果） |
+| P4 | 数据驱动的批次不变性：训练增强或域对抗 | ⬜ 待开始 |
 | P4 | 开放集拒识 / 混合物解混 | ⬜ |
 | P5 | 工程化：CLI、单元测试、文档 | ⬜ |
 
