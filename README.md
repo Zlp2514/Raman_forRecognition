@@ -556,6 +556,7 @@ Raman_forRecognition/
 ├── 17_attribution.py             # 归因：判别权重与波段重要性
 ├── 18_improvement_summary.py     # 汇总：六类改进相对基线的变化（论文图 2）
 ├── 19_paired_test.py             # 配对检验：逐折 Wilcoxon 符号秩检验
+├── 20_openset_perclass.py        # 拒识：分类别 AUROC（论文图 3）
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── tests/test_core.py            # 单元测试（unittest，23 个用例）
@@ -584,6 +585,7 @@ Raman_forRecognition/
 ├── attribution_result.png        # 17 的波数归因
 ├── improvement_summary.png       # 18 的六类改进汇总
 ├── paired_test.png               # 19 的配对检验分布
+├── openset_perclass.png          # 20 的分类别拒识能力
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -633,6 +635,7 @@ print("负值比例:", spec.negative_ratio())
 | P14 | 波数归因（判别权重 + 波段重要性） | ✅ 已完成（关键波段碎片化分布） |
 | P15 | 六类改进汇总图（统一到全维协议） | ✅ 已完成（19 个配置中 15 个低于基线） |
 | P16 | 配对检验（9 折 Wilcoxon） | ✅ 已完成（三类"提升"全部不显著） |
+| P17 | 分类别拒识能力（论文图 3） | ✅ 已完成（AUROC 0.10–0.99，两数据集同模式） |
 
 ## 环境
 
