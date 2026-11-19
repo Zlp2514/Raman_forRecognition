@@ -340,6 +340,42 @@ MixStyle 域泛化尝试为负增益（留批次 0.751→0.703），属实现未
 
 3. **真实数据没有真值，不能用 RMSE 自动选参。** 合成数据的"自动挑最优参数"是它独有的特权。真实数据只能靠峰形是否被削、负值比例、重复谱一致性来判断。
 
+## 无真值选参实验（P10）
+
+真实光谱没有"正确背景"这个标准答案，误差算不出来，实践中只能沿用默认参数或凭经验调。
+本轮设计四个**不需要真值**的代理指标（负值比例、基线曲率、低频残差、噪声偏离），
+按"最差项决定得分"合成总分来选参。
+
+**合成数据上的验证**（真值已知，可算真实误差）：
+
+| 方法 | 默认参数误差 | 代理选参误差 | 真实最优 | 选中排名 |
+|---|---|---|---|---|
+| imodpoly | 19.03 | **0.81** | 0.73 | 2/7 |
+| snip | 44.79 | **9.30** | 9.30 | **1/7** |
+| modpoly | 27.69 | 5.19 | 4.53 | 3/7 |
+| asls / airpls | 10.60 / 18.01 | 8.41 / 8.32 | 7.00 / 6.22 | 4/20、2/5 |
+
+全部 67 个候选合并后，**综合得分与真实误差的 Spearman 秩相关为 −0.74**——
+说明"不看真值也能把参数排对"。
+
+![无真值选参验证](param_selection_validate.png)
+
+**但真实数据上，选参对下游识别没有可见影响**：默认参数（poly_order=2）留批次 0.841、
+代理选参（poly_order=4）0.840，差 0.002，远小于标准差 0.064。
+
+这与 P3 的结论一致：**SNV 已经吸收了基线差异的主要成分**，前处理参数的精细程度
+对最终识别不再敏感。因此"参数影响大于方法选择"这一说法需要限定在**基线误差层面**，
+在识别准确率层面并不成立。
+
+> 指标设计本身踩了两次坑：第一版用"信噪比"，残留背景会抬高最大值、反而奖励欠扣；
+> 第二版等权平均时，"根本不扣背景"的解在前三项上全部满分。
+> 改为"最差项决定得分"后才通过。详见 `experiments/2026-11-19-p10-param-selection.md`。
+
+```bash
+python 12_param_selection.py                 # 合成数据验证
+python 12_param_selection.py --stage apply   # 真实数据下游验证
+```
+
 ## 目录结构
 
 ```
@@ -354,7 +390,8 @@ Raman_forRecognition/
 │   ├── transfer.py               #   批次校正：导数 / 批次中心化 / CORAL 域对齐
 │   ├── augment.py                #   训练期增强：背景形状 / 平移 / 模糊 / 噪声
 │   ├── prototype.py              #   原型分类器：欧氏 / 余弦 / 白化
-│   └── openset.py                #   开放集评分：margin / 原型距离 / 马氏距离
+│   ├── openset.py                #   开放集评分：margin / 原型距离 / 马氏距离
+│   └── paramselect.py            #   无真值选参：四个代理指标 + 最差项合成
 ├── cli.py                        # 命令行入口：info / preprocess / classify
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
@@ -367,6 +404,7 @@ Raman_forRecognition/
 ├── 09_metric_learning.py         # 度量：LDA（含收缩）与分类器组合
 ├── 10_openset.py                 # 拒识：开放集识别（留一类作未知）
 ├── 11_neural.py                  # 非线性：MLP 与 1D-CNN（需 PyTorch）
+├── 12_param_selection.py         # 选参：无真值代理指标验证与应用
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── tests/test_core.py            # 单元测试（unittest，23 个用例）
@@ -386,6 +424,7 @@ Raman_forRecognition/
 ├── metric_learning_result.png    # 09 的度量学习对比
 ├── openset_result.png            # 10 的开放集评分器对比
 ├── neural_result.png             # 11 的非线性模型对比
+├── param_selection_validate.png  # 12 的代理指标验证
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -427,6 +466,7 @@ print("负值比例:", spec.negative_ratio())
 | P7 | 开放集拒识（未知物识别）与置信度校准 | ✅ 已完成（平均 AUROC 仅 0.52–0.67，类别差异极大） |
 | P8 | 非线性表征学习（MLP / 1D-CNN / MixStyle） | ✅ 已完成（未突破线性基线） |
 | P9 | 工程化：CLI、单元测试、文档 | ✅ 已完成 |
+| P10 | 无真值条件下的基线参数选择（代理指标） | ✅ 已完成（排序有效，下游收益可忽略） |
 
 ## 环境
 
