@@ -28,6 +28,9 @@ quickstart_corrected.csv
 compare_result.csv
 my_raman_corrected.csv
 
+# ---- 数据集（体积大，按 README「数据集」一节自行下载）----
+data/
+
 # ---- 系统 ----
 Thumbs.db
 desktop.ini

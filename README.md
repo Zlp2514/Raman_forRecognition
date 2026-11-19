@@ -44,6 +44,36 @@ raman_shift_cm-1,intensity
 202,1260
 ```
 
+## 数据集
+
+项目使用 **Zenodo 15279321** 的公开拉曼数据集（CC-BY-4.0），包含两个子集：
+
+| 子集 | 内容 | 样本数 | 类别 | 点数 | 特点 |
+|---|---|---|---|---|---|
+| `Bacterial_data` | 单个细菌细胞 | 2710 | 6 种菌 | 1376 | 含 **9 个测量批次**，适合做跨批次泛化 |
+| `Oil_data` | 食用油脂 | 560 | 8 种油 | 916 | 官方已划分 train 320 / test 240 |
+
+下载方式（脚本已封装好，直接跑）：
+
+```bash
+mkdir -p data/raw && cd data/raw
+curl -L -O https://zenodo.org/api/records/15279321/files/Bacterial_data.zip
+curl -L -O https://zenodo.org/api/records/15279321/files/Oil_data.zip
+cd ../.. && python -c "import zipfile; [zipfile.ZipFile(f'data/raw/{n}').extractall('data') for n in ('Bacterial_data.zip','Oil_data.zip')]"
+```
+
+解压后目录为 `data/Bacterial_data/` 与 `data/Oil_data/`，验证：
+
+```bash
+python 03_load_dataset.py
+```
+
+> **注意**：这两个数据集的 CSV 是"矩阵式"（第一行是位移轴，之后每行一条光谱），不是常见的两列格式，必须用 `raman_rec.load_bacterial()` / `load_oil()` 读取，不能用 `load_csv()`。
+
+**引用（CC-BY-4.0 要求署名）**：
+
+> Guo, S. *Raman spectral datasets from single bacterial cells and different oil*. Zenodo (2025). doi:10.5281/zenodo.15279321
+
 ## 六种方法的对比结果
 
 合成光谱（1600 点，噪声标准差 5.0，真实背景已知）：
@@ -75,15 +105,19 @@ Raman_forRecognition/
 │   ├── spectrum.py               #   Spectrum 数据结构：归一化/平滑/寻峰/信噪比
 │   ├── preprocess.py             #   七种基线方法的统一入口 + 参数网格
 │   ├── io.py                     #   两列 CSV 读写（自动处理 GBK/UTF-8 与表头）
-│   └── synthetic.py              #   带真值的合成光谱生成器
+│   ├── synthetic.py              #   带真值的合成光谱生成器
+│   └── datasets.py               #   真实数据集加载器（细菌 / 油脂）与划分策略
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
+├── 03_load_dataset.py            # 数据：加载真实数据集、打印概览、画各类平均谱
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── my_raman.csv                  # 示例输入数据
 ├── quickstart_result.png         # 01 的输出图
 ├── my_raman_corrected.png        # 02 的输出图
 ├── compare_result.png            # 对比脚本的三联图
+├── dataset_overview.png          # 03 的各类平均光谱图
+├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
 └── .gitignore
@@ -115,8 +149,8 @@ print("负值比例:", spec.negative_ratio())
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | P0 | 代码重构为包结构，统一数据与预处理入口 | ✅ 已完成 |
-| P1 | 接入真实光谱数据集（RRUFF），统一格式与划分 | ⬜ 待开始 |
-| P2 | PCA + SVM 分类基线，跑通第一个识别准确率 | ⬜ |
+| P1 | 接入真实光谱数据集（Zenodo 15279321），统一格式与划分 | ✅ 已完成 |
+| P2 | PCA + SVM 分类基线，跑通第一个识别准确率 | ⬜ 待开始 |
 | P3 | 1D-CNN 对照实验 | ⬜ |
 | P4 | 开放集拒识 / 混合物解混 | ⬜ |
 | P5 | 工程化：CLI、单元测试、文档 | ⬜ |

@@ -21,8 +21,16 @@ from .preprocess import (
     estimate_baseline,
     remove_baseline,
 )
+from .datasets import (
+    Dataset,
+    load_bacterial,
+    load_oil,
+    stratified_split,
+    official_split,
+    group_split,
+)
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Spectrum",
@@ -34,4 +42,10 @@ __all__ = [
     "PARAM_GRIDS",
     "estimate_baseline",
     "remove_baseline",
+    "Dataset",
+    "load_bacterial",
+    "load_oil",
+    "stratified_split",
+    "official_split",
+    "group_split",
 ]
