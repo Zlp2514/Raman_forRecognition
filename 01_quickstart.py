@@ -1,58 +1,59 @@
-"""pybaselines 入门复现：用模拟拉曼光谱比较 ModPoly 和 IModPoly。"""
+"""pybaselines 入门复现：用模拟拉曼光谱比较 ModPoly 和 IModPoly。
+
+P0 重构说明
+    数据生成与基线校正已移入 raman_rec 包：
+        make_synthetic()    生成带真值的合成光谱
+        remove_baseline()   七种基线方法的统一入口
+    本脚本只保留"跑一遍、存结果、画一张图"的演示职责，
+    因此依旧是理解整个流程的最好入口。
+"""
 from pathlib import Path
 import sys
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pybaselines
-from pybaselines import Baseline, utils
+
+from raman_rec import make_synthetic, remove_baseline, save_csv
 
 OUTPUT_DIR = Path(__file__).resolve().parent
 POLY_ORDER = 5
 
-# 1. 构造横坐标、窄拉曼峰、宽荧光背景和噪声。
-x = np.linspace(200, 2000, 1600)
-true_signal = (
-    utils.gaussian(x, 180, 520, 10)
-    + utils.gaussian(x, 260, 1000, 16)
-    + utils.gaussian(x, 150, 1450, 12)
-    + utils.gaussian(x, 210, 1600, 20)
-)
-true_baseline = 250 + 900 * np.exp(-(x - 200) / 650) + 0.00035 * (x - 1000) ** 2
-noise = np.random.default_rng(20261114).normal(0, 5, x.size)
-y = true_signal + true_baseline + noise
+# 1. 生成合成光谱：4 个窄拉曼峰 + 指数/二次荧光背景 + 固定种子噪声。
+#    真值（true_signal / true_baseline）留在 meta 里，只有合成数据才有。
+spec = make_synthetic()
+x, y = spec.x, spec.y
+true_signal = spec.meta["true_signal"]
+true_baseline = spec.meta["true_baseline"]
 
-# 2. 使用同一个 Baseline 对象分别拟合两种基线。
-fitter = Baseline(x_data=x)
+# 2. 同一份数据分别用两种多项式迭代算法扣背景。
 results = {}
 for algorithm in ("modpoly", "imodpoly"):
-    baseline, params = getattr(fitter, algorithm)(y, poly_order=POLY_ORDER)
+    corrected = remove_baseline(spec, algorithm, poly_order=POLY_ORDER)
     results[algorithm] = {
-        "baseline": baseline,
-        "corrected": y - baseline,
-        "params": params,
+        "baseline": corrected.meta["baseline"],
+        "corrected": corrected.y,
+        "iterations": corrected.meta["baseline_iterations"],
     }
 
 # 3. 保存原始模拟数据，供 02_process_my_csv.py 直接读取。
-np.savetxt(
+save_csv(
     OUTPUT_DIR / "demo_raman.csv",
-    np.column_stack((x, y)),
-    delimiter=",",
-    header="raman_shift_cm-1,intensity",
-    comments="",
+    {"raman_shift_cm-1": x, "intensity": y},
 )
 
 # 4. 保存全部结果，便于用 Excel 或其他软件继续分析。
-output_columns = [x, y, true_signal, true_baseline]
-for algorithm in ("modpoly", "imodpoly"):
-    output_columns.extend((results[algorithm]["baseline"], results[algorithm]["corrected"]))
-np.savetxt(
+save_csv(
     OUTPUT_DIR / "quickstart_corrected.csv",
-    np.column_stack(output_columns),
-    delimiter=",",
-    header=("raman_shift_cm-1,raw_intensity,true_signal,true_baseline,"
-            "modpoly_baseline,modpoly_corrected,imodpoly_baseline,imodpoly_corrected"),
-    comments="",
+    {
+        "raman_shift_cm-1": x,
+        "raw_intensity": y,
+        "true_signal": true_signal,
+        "true_baseline": true_baseline,
+        "modpoly_baseline": results["modpoly"]["baseline"],
+        "modpoly_corrected": results["modpoly"]["corrected"],
+        "imodpoly_baseline": results["imodpoly"]["baseline"],
+        "imodpoly_corrected": results["imodpoly"]["corrected"],
+    },
 )
 
 # 5. 绘图并保存。IDLE 中按 F5 运行时还会弹出图形窗口。
@@ -79,8 +80,9 @@ print("Python:", sys.executable)
 print("pybaselines:", pybaselines.__version__)
 print("Polynomial order:", POLY_ORDER)
 for algorithm in ("modpoly", "imodpoly"):
-    rmse = np.sqrt(np.mean((results[algorithm]["baseline"] - true_baseline) ** 2))
-    iterations = len(results[algorithm]["params"]["tol_history"])
-    print(f"{algorithm}: baseline RMSE={rmse:.3f}, iterations={iterations}")
+    diff = results[algorithm]["baseline"] - true_baseline
+    rmse = float((diff ** 2).mean() ** 0.5)
+    print(f"{algorithm}: baseline RMSE={rmse:.3f}, "
+          f"iterations={results[algorithm]['iterations']}")
 print("Results saved in:", OUTPUT_DIR)
 plt.show()

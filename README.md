@@ -71,9 +71,15 @@ raman_shift_cm-1,intensity
 
 ```
 Raman_forRecognition/
-├── 01_quickstart.py              # 模拟数据：ModPoly vs IModPoly
-├── 02_process_my_csv.py          # 处理自备 CSV
-├── compare_baseline_methods.py   # 六方法对比（支持 --csv 参数）
+├── raman_rec/                    # 核心代码包（P0 重构后新增）
+│   ├── spectrum.py               #   Spectrum 数据结构：归一化/平滑/寻峰/信噪比
+│   ├── preprocess.py             #   七种基线方法的统一入口 + 参数网格
+│   ├── io.py                     #   两列 CSV 读写（自动处理 GBK/UTF-8 与表头）
+│   └── synthetic.py              #   带真值的合成光谱生成器
+├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
+├── 02_process_my_csv.py          # 实用：处理自备 CSV
+├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
+├── experiments/README.md         # 实验记录规范与表格
 ├── my_raman.csv                  # 示例输入数据
 ├── quickstart_result.png         # 01 的输出图
 ├── my_raman_corrected.png        # 02 的输出图
@@ -84,6 +90,36 @@ Raman_forRecognition/
 ```
 
 其余 `*_corrected.csv`、`demo_raman.csv` 等中间产物可由脚本重新生成，已在 `.gitignore` 中排除。
+
+## 核心 API
+
+所有处理都以 `Spectrum` 为中心，每一步返回新对象，可以链式调用：
+
+```python
+from raman_rec import load_csv, remove_baseline
+
+spec = load_csv("my_raman.csv")                 # 读数据，自动跳过表头、处理 GBK
+spec = remove_baseline(spec, "imodpoly", poly_order=5)
+spec = spec.smoothed(window=7).normalized("snv")  # 平滑 + 标准化
+
+peaks = spec.peaks(prominence_frac=0.05)        # 寻峰
+print(peaks["shift"][:5])                       # 前五个峰位
+print("SNR:", spec.snr())
+print("负值比例:", spec.negative_ratio())
+```
+
+可用基线方法：`modpoly` / `imodpoly` / `asls` / `airpls` / `snip` / `mixture_model` / `pspline_asls`。
+
+## 开发路线
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| P0 | 代码重构为包结构，统一数据与预处理入口 | ✅ 已完成 |
+| P1 | 接入真实光谱数据集（RRUFF），统一格式与划分 | ⬜ 待开始 |
+| P2 | PCA + SVM 分类基线，跑通第一个识别准确率 | ⬜ |
+| P3 | 1D-CNN 对照实验 | ⬜ |
+| P4 | 开放集拒识 / 混合物解混 | ⬜ |
+| P5 | 工程化：CLI、单元测试、文档 | ⬜ |
 
 ## 环境
 

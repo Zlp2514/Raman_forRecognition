@@ -25,7 +25,14 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 import pybaselines
-from pybaselines import Baseline, utils
+
+from raman_rec import (
+    DEFAULT_PARAMS,
+    PARAM_GRIDS,
+    estimate_baseline,
+    make_synthetic,
+)
+from raman_rec import load_csv as load_spectrum_csv
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_OUT = ROOT
@@ -33,20 +40,11 @@ DEFAULT_OUT = ROOT
 FIGURE_NAME = "compare_result.png"
 TABLE_NAME = "compare_result.csv"
 
-# 每个方法给出一个小参数网格。合成谱有真值，因此可以直接按基线误差挑最优；
-# 换成真实数据后，这个"自动挑最优"不成立，只能人工看峰形。
-METHODS = {
-    "imodpoly": [{"poly_order": o} for o in (2, 3, 4, 5, 6, 7, 8)],
-    "asls": [{"lam": lam, "p": p}
-             for lam in (1e4, 1e5, 1e6, 1e7, 1e8)
-             for p in (0.001, 0.01, 0.05, 0.1)],
-    "airpls": [{"lam": lam} for lam in (1e4, 1e5, 1e6, 1e7, 1e8)],
-    "snip": [{"max_half_window": w} for w in (5, 10, 20, 40, 60, 80, 120)],
-    "mixture_model": [{"p": p} for p in (0.05, 0.1, 0.3, 0.5, 0.7, 0.9)],
-    "pspline_asls": [{"lam": lam, "p": p}
-                     for lam in (1e2, 1e3, 1e4, 1e5, 1e6)
-                     for p in (0.001, 0.01, 0.05)],
-}
+# 参与对比的六种方法（顺序即输出顺序；ModPoly 只在 01_quickstart.py 里作对照）。
+# 参数网格与默认参数统一由 raman_rec.preprocess 提供，避免各脚本各写一套。
+COMPARE_METHODS = ("imodpoly", "asls", "airpls", "snip",
+                   "mixture_model", "pspline_asls")
+METHODS = {name: PARAM_GRIDS[name] for name in COMPARE_METHODS}
 
 COLORS = {
     "imodpoly": "#d62728",
@@ -59,14 +57,7 @@ COLORS = {
 
 # 真实数据没有真值，无法按误差自动挑参，因此改用一组固定推荐值。
 # 这些值只是合理起点，不是最优解；需要结合峰形人工微调。
-DEFAULTS = {
-    "imodpoly": {"poly_order": 5},
-    "asls": {"lam": 1e6, "p": 0.01},
-    "airpls": {"lam": 1e6},
-    "snip": {"max_half_window": 40},
-    "mixture_model": {"p": 0.5},
-    "pspline_asls": {"lam": 1e2, "p": 0.01},
-}
+DEFAULTS = {name: DEFAULT_PARAMS[name] for name in COMPARE_METHODS}
 
 
 def setup_fonts() -> None:
@@ -79,40 +70,24 @@ def setup_fonts() -> None:
 
 def load_synthetic():
     """与 01_quickstart.py 完全一致：1600 点，200-2000 cm-1，同一随机种子。"""
-    rng = np.random.default_rng(20261114)
-    x = np.linspace(200, 2000, 1600)
-    true_signal = (
-        utils.gaussian(x, 180, 520, 10)
-        + utils.gaussian(x, 260, 1000, 16)
-        + utils.gaussian(x, 150, 1450, 12)
-        + utils.gaussian(x, 210, 1600, 20)
-    )
-    true_baseline = 250 + 900 * np.exp(-(x - 200) / 650) + 0.00035 * (x - 1000) ** 2
-    y = true_signal + true_baseline + rng.normal(0, 5, x.size)
-    return x, y, true_baseline, true_signal
+    spec = make_synthetic()
+    return spec.x, spec.y, spec.meta["true_baseline"], spec.meta["true_signal"]
 
 
 def load_csv(path: Path):
-    """读两列 CSV：第一列拉曼位移，第二列强度。"""
-    data = np.loadtxt(path, delimiter=",", skiprows=1)
-    if data.ndim != 2 or data.shape[1] < 2:
-        raise ValueError("CSV 至少需要两列：拉曼位移, 强度")
-    x, y = data[:, 0].astype(float), data[:, 1].astype(float)
-    order = np.argsort(x)
-    x, y = x[order], y[order]
-    if np.any(np.diff(x) == 0):
-        raise ValueError("拉曼位移存在重复值")
+    """读两列 CSV：第一列拉曼位移，第二列强度（编码与表头由 raman_rec 处理）。"""
+    spec = load_spectrum_csv(path)
+    x, y = spec.x, spec.y
     if x.size < 20:
         raise ValueError(f"只有 {x.size} 个点，至少需要 20 个才能做对比")
     return x, y
 
 
-def fit_once(fitter: Baseline, name: str, y: np.ndarray, kwargs: dict):
+def fit_once(x: np.ndarray, y: np.ndarray, name: str, kwargs: dict):
     start = time.perf_counter()
-    baseline, params = getattr(fitter, name)(y, **kwargs)
+    baseline, info = estimate_baseline(x, y, name, **kwargs)
     elapsed = time.perf_counter() - start
-    history = params.get("tol_history", []) if isinstance(params, dict) else []
-    return baseline, len(history), elapsed
+    return baseline, info["iterations"], elapsed
 
 
 def describe(kwargs: dict) -> str:
@@ -145,7 +120,6 @@ def main() -> int:
         has_truth = False
         source = f"{args.csv}（{x.size} 点，无真值）"
 
-    fitter = Baseline(x_data=x)
     print("=" * 72)
     print("pybaselines:", pybaselines.__version__)
     print("Python    :", sys.executable)
@@ -163,7 +137,7 @@ def main() -> int:
         best = None
         for kwargs in grid:
             try:
-                baseline, iters, elapsed = fit_once(fitter, name, y, kwargs)
+                baseline, iters, elapsed = fit_once(x, y, name, kwargs)
             except Exception as exc:               # 参数越界等，跳过该组
                 print(f"  [跳过] {name} {kwargs}: {type(exc).__name__}: {exc}")
                 continue

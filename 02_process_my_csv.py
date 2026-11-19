@@ -1,9 +1,15 @@
-"""读取两列 CSV，使用 IModPoly 消减荧光背景并保存结果。"""
+"""读取两列 CSV，使用 IModPoly 消减荧光背景并保存结果。
+
+P0 重构说明
+    CSV 读取改用 raman_rec.load_csv()，它会自动处理表头与 GBK/UTF-8 编码差异；
+    基线校正走 raman_rec.remove_baseline()，与 01_quickstart.py 使用同一份实现。
+"""
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
-from pybaselines import Baseline
+import matplotlib.pyplot as plt
+
+from raman_rec import load_csv, remove_baseline, save_csv
 
 # 初学者主要修改下面三个参数。
 POLY_ORDER = 5
@@ -18,34 +24,30 @@ if not input_path.exists():
 if not input_path.exists():
     raise FileNotFoundError("请先运行 01_quickstart.py，或提供 my_raman.csv。")
 
-# CSV 第一列是拉曼位移，第二列是强度，第一行为表头。
-data = np.loadtxt(input_path, delimiter=",", skiprows=1)
-if data.ndim != 2 or data.shape[1] < 2:
-    raise ValueError("输入文件必须至少包含两列：拉曼位移和强度。")
-x, y = data[:, 0], data[:, 1]
-if not np.all(np.isfinite(data[:, :2])):
-    raise ValueError("输入数据含空值、NaN 或无穷值，请先清理。")
+# load_csv 会自动跳过表头、按拉曼位移排序、检查重复值与 NaN。
+spec = load_csv(input_path)
+x, y = spec.x, spec.y
 
-fitter = Baseline(x_data=x)
-baseline, params = fitter.imodpoly(
-    y, poly_order=POLY_ORDER, num_std=NUM_STD
-)
-corrected = y - baseline
+corrected = remove_baseline(spec, "imodpoly", poly_order=POLY_ORDER, num_std=NUM_STD)
+baseline = corrected.meta["baseline"]
+corrected_y = corrected.y
 
 output_path = input_path.with_name(input_path.stem + "_corrected.csv")
 figure_path = input_path.with_name(input_path.stem + "_corrected.png")
-np.savetxt(
+save_csv(
     output_path,
-    np.column_stack((x, y, baseline, corrected)),
-    delimiter=",",
-    header="raman_shift_cm-1,raw_intensity,baseline,corrected_intensity",
-    comments="",
+    {
+        "raman_shift_cm-1": x,
+        "raw_intensity": y,
+        "baseline": baseline,
+        "corrected_intensity": corrected_y,
+    },
 )
 
 fig, ax = plt.subplots(figsize=(10, 6))
 ax.plot(x, y, color="0.55", lw=1, label="Raw spectrum")
 ax.plot(x, baseline, "tab:red", lw=1.8, label="IModPoly baseline")
-ax.plot(x, corrected, "tab:blue", lw=1.1, label="Corrected spectrum")
+ax.plot(x, corrected_y, "tab:blue", lw=1.1, label="Corrected spectrum")
 ax.set_xlabel("Raman shift (cm$^{-1}$)")
 ax.set_ylabel("Intensity")
 ax.legend()
@@ -53,8 +55,10 @@ fig.tight_layout()
 fig.savefig(figure_path, dpi=180)
 
 print("Input:", input_path)
+print("Points:", x.size, f"({x[0]:.1f}~{x[-1]:.1f} cm-1)")
 print("Polynomial order:", POLY_ORDER, "; num_std:", NUM_STD)
-print("Iterations:", len(params["tol_history"]))
+print("Iterations:", corrected.meta["baseline_iterations"])
+print("Negative ratio:", f"{np.mean(corrected_y < 0):.4f}")
 print("CSV output:", output_path)
 print("Figure output:", figure_path)
 plt.show()
