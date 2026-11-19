@@ -1,0 +1,38 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# ---- 虚拟环境 ----
+.venv/
+venv/
+env/
+
+# ---- 编辑器 / IDE ----
+.vscode/
+.idea/
+*.swp
+
+# ---- Jupyter ----
+.ipynb_checkpoints/
+
+# ---- 脚本生成的结果文件（可由代码重新生成，不入库）----
+demo_raman.csv
+demo_raman_corrected.csv
+quickstart_corrected.csv
+compare_result.csv
+my_raman_corrected.csv
+
+# ---- 系统 ----
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ---- 日志与临时文件 ----
+*.log
+~$*

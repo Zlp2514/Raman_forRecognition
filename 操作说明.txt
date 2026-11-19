@@ -1,0 +1,90 @@
+pybaselines 拉曼荧光背景消减复现说明
+================================================
+
+一、最快运行方法
+1. 双击工作区根目录中的 start_idle.bat。
+2. IDLE 会打开 01_quickstart.py，并加载本项目的虚拟环境。
+3. 在 IDLE 菜单选择 Run -> Run Module，或按 F5。
+4. 第一次运行会生成模拟数据、校正结果 CSV 和 quickstart_result.png。
+
+
+二、处理自己的实验数据
+1. 用 Excel 或文本编辑器准备两列 CSV：拉曼位移、强度。
+2. 第一行写成：raman_shift_cm-1,intensity
+3. 文件命名为 my_raman.csv，放在本说明所在目录。
+4. 在 IDLE 中打开 02_process_my_csv.py，按 F5。
+5. 输出文件名分别为 my_raman_corrected.csv 和 my_raman_corrected.png。
+6. 可修改脚本顶部的 POLY_ORDER 和 NUM_STD，每次只改一个参数并比较结果。
+
+
+三、比较六种基线方法（可选）
+compare_baseline_methods.py 在同一个光谱上同时运行六个方法，
+用于观察"换算法"到底改变了什么，而不是只看一种结果。
+
+运行前提：pybaselines 共有一维 62 个方法，这里只选 6 个有代表性的：
+    imodpoly       多项式迭代（01、02 用的就是这一族）
+    asls           Whittaker 平滑 + 非对称加权
+    airpls         Whittaker + 自动迭代重加权
+    snip           统计敏感非线性迭代削峰
+    mixture_model  混合模型（rubberband + 峰模型）
+    pspline_asls   惩罚样条版 asls
+
+运行方式：
+1. IDLE 中打开 compare_baseline_methods.py，按 F5；
+   或在工作区根目录的 PowerShell 中执行：
+   .\.venv\Scripts\python.exe .\raman_reproduction\compare_baseline_methods.py
+2. 输出 compare_result.png（三联图）和 compare_result.csv（参数与误差）。
+
+处理自己的数据（此时没有真值，脚本不做自动选参、不算 RMSE）：
+   .\.venv\Scripts\python.exe .\raman_reproduction\compare_baseline_methods.py --csv .\raman_reproduction\my_raman.csv
+
+合成光谱上的实测结果（1600 点，噪声标准差 5.0）：
+    imodpoly       poly_order=5          基线RMSE 0.727
+    mixture_model  p=0.7                 基线RMSE 0.945
+    airpls         lam=1e6               基线RMSE 6.217
+    pspline_asls   lam=1000, p=0.05      基线RMSE 6.832
+    asls           lam=1e6, p=0.05       基线RMSE 7.000
+    snip           max_half_window=40    基线RMSE 9.301
+
+读图注意：RMSE 排名不等于方法优劣。
+1. 这条合成谱的真实背景接近低阶多项式，所以 imodpoly 占优有数据配合成分；
+   真实样品的荧光形状往往不是多项式，asls、airpls 可能更稳。
+2. 参数影响大于方法选择：同一个 imodpoly，poly_order=2 时 RMSE 约 13.8，
+   poly_order=5 时 0.727。
+3. 真实数据没有真值，只能用峰形、负值比例、重复谱一致性判断，
+   不能用"RMSE 最小"来自动选参。
+
+
+四、目录说明
+..\.venv：本项目独立 Python 环境，不污染全局 Python。
+..\pybaselines-main：derb12/pybaselines 的 GitHub 官方源码快照。
+01_quickstart.py：模拟数据复现，比较 ModPoly 和 IModPoly。
+02_process_my_csv.py：读取自己的 CSV 并执行 IModPoly。
+compare_baseline_methods.py：六种方法横向对比。
+03_make_png.py：怎么自己生成 PNG 图的教学示例（最简版 + 完整版）。
+png_demo_basic.png / png_demo_full.png：上面那个教学脚本生成的两张示例图。
+demo_raman.csv：第一个脚本生成的模拟原始光谱。
+quickstart_result.png / quickstart_corrected.csv：脚本 01 的结果。
+my_raman_corrected.png / my_raman_corrected.csv：脚本 02 的结果。
+compare_result.png / compare_result.csv：脚本 03 的结果。
+
+
+五、手动启动命令（可选）
+在工作区根目录打开 PowerShell，执行：
+.\.venv\Scripts\pythonw.exe -m idlelib .\raman_reproduction\01_quickstart.py
+
+
+六、IDLE 配置说明
+本电脑原有的 C:\Users\20855\.idlerc\config-main.cfg 中存在乱码字体名，IDLE 启动时会因编码错误退出。
+start_idle.bat 已改为在本工作区创建独立 IDLE 配置，不会修改你的原有配置。
+如需修复原 IDLE，请先备份后再处理，不建议直接覆盖。
+
+
+七、注意事项
+- 请使用 start_idle.bat 或上面的命令启动 IDLE；从开始菜单启动的 IDLE 可能使用全局 Python。
+- 不要为了运行示例而安装到全局 Python。
+- 不要删除原始实验数据；输出结果会写入新文件。
+- 代码跑通只代表计算成功，不代表参数适合自己的光谱。
+- 多项式阶数过高可能把宽拉曼峰当作背景消掉。
+- 对比脚本会自动按真值挑参数，这只是合成数据的特权，不能照搬到真实数据。
+- 本项目源码采用 BSD-3-Clause 许可证，详见源码目录 LICENSE.txt。
