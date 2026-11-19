@@ -4,6 +4,10 @@
 
 拉曼光谱测量中，样品本身的荧光会产生一条缓慢变化的背景，把窄的拉曼峰抬高、甚至淹没。这个项目用 pybaselines 提供的多种算法把这条背景估计出来并减掉，同时在同一份数据上横向比较六种方法的差异。
 
+> 📄 **完整实验报告：[跨批次拉曼光谱细菌鉴定的实验研究](docs/cross-batch-raman-report.md)**
+> —— 记录六轮实验（P2–P6）、四组负结果与一次方法学修正，结论是
+> 「SNV + 全维 + 线性 SVM 已是难以逾越的强基线（细菌 0.828 / 油脂 0.898）」。
+
 ![六种基线方法对比](compare_result.png)
 
 ## 这个项目做了什么
@@ -269,7 +273,8 @@ Raman_forRecognition/
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── docs/                         # 技术报告
-│   └── batch-correction-negative-result.md   # 批次校正负结果详细分析
+│   ├── cross-batch-raman-report.md            # 完整实验报告（六轮实验总汇）
+│   └── batch-correction-negative-result.md    # 批次校正负结果详细分析
 ├── my_raman.csv                  # 示例输入数据
 ├── quickstart_result.png         # 01 的输出图
 ├── my_raman_corrected.png        # 02 的输出图
