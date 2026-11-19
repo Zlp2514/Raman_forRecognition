@@ -1,0 +1,20 @@
+﻿category,method,loo_mean,delta_pt,source
+分类器替换,原型·余弦,0.6771,-15.06,本脚本重算（全维）
+分类器替换,原型·欧氏,0.6782,-14.95,本脚本重算（全维）
+分类器替换,原型·白化欧氏,0.6831,-14.46,本脚本重算（全维）
+线性度量,LDA + SVM,0.6840,-14.37,metric_learning_result.csv
+分类器替换,kNN（k=5）,0.6937,-13.40,本脚本重算（全维）
+线性度量,LDA + kNN,0.6996,-12.81,metric_learning_result.csv
+非线性模型,1D-CNN+MixStyle,0.7027,-12.50,neural_result.csv
+线性度量,LDA + 原型,0.7044,-12.33,metric_learning_result.csv
+浅层校正,一阶导数,0.7369,-9.08,dimension_sweep.csv (recheck_no_pca)
+非线性模型,1D-CNN,0.7507,-7.70,neural_result.csv
+浅层校正,指纹区筛选,0.8019,-2.58,dimension_sweep.csv (recheck_no_pca)
+训练期增强,背景形状×4,0.8144,-1.33,augmentation_result.csv
+训练期增强,随机增强×2,0.8147,-1.30,augmentation_result.csv
+线性度量,收缩 LDA + SVM,0.8184,-0.93,metric_learning_result.csv
+训练期增强,随机增强×4,0.8198,-0.79,augmentation_result.csv
+训练期增强,波数平移×4,0.8339,+0.62,augmentation_result.csv
+浅层校正,批次中心化,0.8342,+0.65,dimension_sweep.csv (recheck_no_pca)
+非线性模型,MLP,0.8343,+0.66,neural_result.csv
+无真值选参,代理选参*,0.8395,+1.18,param_selection_apply_imodpoly.csv

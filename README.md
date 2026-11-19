@@ -554,6 +554,7 @@ Raman_forRecognition/
 ├── 15_cascade.py                 # 级联：库匹配门控 + SVM 判定
 ├── 16_seed_stability.py          # 稳定性：多种子 vs 折间波动
 ├── 17_attribution.py             # 归因：判别权重与波段重要性
+├── 18_improvement_summary.py     # 汇总：六类改进相对基线的变化（论文图 2）
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── tests/test_core.py            # 单元测试（unittest，23 个用例）
@@ -580,6 +581,7 @@ Raman_forRecognition/
 ├── cascade_result.png            # 15 的三种方案对比
 ├── seed_stability_bacterial.png  # 16 的稳定性对比
 ├── attribution_result.png        # 17 的波数归因
+├── improvement_summary.png       # 18 的六类改进汇总
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt
@@ -627,6 +629,7 @@ print("负值比例:", spec.negative_ratio())
 | P12 | 级联方案（库匹配门控 + 分类器判定） | ✅ 已完成（随机最优，留批次不及纯分类器） |
 | P13 | 稳定性分析（5 种子 × 3 配置） | ✅ 已完成（种子波动 0.9 pt，折间 6.6 pt） |
 | P14 | 波数归因（判别权重 + 波段重要性） | ✅ 已完成（关键波段碎片化分布） |
+| P15 | 六类改进汇总图（统一到全维协议） | ✅ 已完成（19 个配置中 15 个低于基线） |
 
 ## 环境
 
