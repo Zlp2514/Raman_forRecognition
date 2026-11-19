@@ -1,0 +1,6 @@
+﻿dataset,protocol,per_class,n_lib,closed,known_ok,reject,open_all,auroc
+bacterial,random,1,5.0,0.7190,0.6798,0.1420,0.4645,0.5268
+bacterial,random,3,15.0,0.3766,0.3756,0.0273,0.2362,0.5173
+bacterial,random,5,25.0,0.3776,0.3769,0.0296,0.2378,0.5173
+bacterial,random,10,50.0,0.3801,0.3791,0.0370,0.2421,0.5173
+bacterial,loo_batch,3,15.0,0.3501,0.3498,0.0295,0.2964,0.5143
