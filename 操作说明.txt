@@ -32,11 +32,11 @@ compare_baseline_methods.py 在同一个光谱上同时运行六个方法，
 运行方式：
 1. IDLE 中打开 compare_baseline_methods.py，按 F5；
    或在工作区根目录的 PowerShell 中执行：
-   .\.venv\Scripts\python.exe .\raman_reproduction\compare_baseline_methods.py
+   .\.venv\Scripts\python.exe ".\raman_reproduction\raman_fluorescence elimination\compare_baseline_methods.py"
 2. 输出 compare_result.png（三联图）和 compare_result.csv（参数与误差）。
 
 处理自己的数据（此时没有真值，脚本不做自动选参、不算 RMSE）：
-   .\.venv\Scripts\python.exe .\raman_reproduction\compare_baseline_methods.py --csv .\raman_reproduction\my_raman.csv
+   .\.venv\Scripts\python.exe ".\raman_reproduction\raman_fluorescence elimination\compare_baseline_methods.py" --csv ".\raman_reproduction\raman_fluorescence elimination\my_raman.csv"
 
 合成光谱上的实测结果（1600 点，噪声标准差 5.0）：
     imodpoly       poly_order=5          基线RMSE 0.727
@@ -71,7 +71,7 @@ compare_result.png / compare_result.csv：脚本 03 的结果。
 
 五、手动启动命令（可选）
 在工作区根目录打开 PowerShell，执行：
-.\.venv\Scripts\pythonw.exe -m idlelib .\raman_reproduction\01_quickstart.py
+.\.venv\Scripts\pythonw.exe -m idlelib ".\raman_reproduction\raman_fluorescence elimination\01_quickstart.py"
 
 
 六、IDLE 配置说明

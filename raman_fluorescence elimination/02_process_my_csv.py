@@ -9,6 +9,13 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
+# 脚本已迁入 raman_fluorescence elimination/ 子目录：把仓库根目录加入模块搜索路径。
+import sys
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from raman_rec import load_csv, remove_baseline, save_csv
 
 # 初学者主要修改下面三个参数。

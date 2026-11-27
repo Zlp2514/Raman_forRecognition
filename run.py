@@ -17,18 +17,22 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
 BASE = REPO / "raman_for test"
+FOLDERS = (REPO / "raman_for test",
+           REPO / "raman_fluorescence elimination")
 
 
 def locate(query: str) -> Path:
     """在归档目录里查找脚本；支持 "21" 与 "21_protocol_gap.py" 两种写法。"""
-    if not BASE.exists():
-        raise SystemExit(f"找不到归档目录：{BASE}")
-    name = query if query.endswith(".py") else f"{query}"
-    if not query.endswith(".py"):
-        # 纯编号：匹配 NN_*.py
-        hits = sorted(BASE.rglob(f"{query.zfill(2)}_*.py"))
+    name = query if query.endswith(".py") else f"{query}.py"
+    # 纯数字按编号前缀匹配（21 → 21_*.py）；其余按文件名匹配（cli → cli.py）
+    if query.isdigit():
+        pattern = f"{query.zfill(2)}_*.py"
     else:
-        hits = sorted(BASE.rglob(name))
+        pattern = name
+    hits = []
+    for folder in FOLDERS:
+        if folder.exists():
+            hits.extend(sorted(folder.rglob(pattern)))
     if not hits:
         # 兜底：允许直接指定根目录下的脚本（01/02/compare 等）
         root_hits = sorted(REPO.glob(name))

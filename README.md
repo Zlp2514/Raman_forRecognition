@@ -9,7 +9,7 @@
 > 「SNV + 全维 + 线性 SVM 已是强基线（细菌 0.828 / 油脂 0.898）」；
 > 拒识上「可行性由未知类的几何位置决定（AUROC 0.10–0.96），不由评分器决定」。
 
-![六种基线方法对比](compare_result.png)
+![六种基线方法对比](raman_fluorescence%20elimination/compare_result.png)
 
 ## 这个项目做了什么
 
@@ -28,14 +28,14 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # 2. 运行模拟数据复现
-python 01_quickstart.py
+python run.py 01
 
-# 3. 处理自己的数据（需先放 my_raman.csv 在同目录）
-python 02_process_my_csv.py
+# 3. 处理自己的数据（需先放 my_raman.csv 到 raman_fluorescence elimination/ 目录）
+python run.py 02
 
 # 4. 六种方法横向对比
-python compare_baseline_methods.py
-python compare_baseline_methods.py --csv my_raman.csv
+python run.py compare_baseline_methods.py
+python run.py compare_baseline_methods.py --csv "raman_fluorescence elimination/my_raman.csv"
 ```
 
 ## 命令行用法
@@ -44,16 +44,16 @@ python compare_baseline_methods.py --csv my_raman.csv
 
 ```bash
 # 查看数据集概览（类别分布、点数、位移范围）
-python cli.py info --dataset bacterial
+python run.py cli info --dataset bacterial
 
 # 校正一条自己的两列 CSV，输出 *_corrected.csv 与图
-python cli.py preprocess my_raman.csv --method imodpoly --order 5
+python run.py cli preprocess "raman_fluorescence elimination/my_raman.csv" --method imodpoly --order 5
 
 # 只做归一化、换方法、指定输出位置
-python cli.py preprocess my_raman.csv --method airpls --normalize snv --out result.csv
+python run.py cli preprocess "raman_fluorescence elimination/my_raman.csv" --method airpls --normalize snv --out result.csv
 
 # 跑一次分类基线，同时报随机划分与留一批次两种协议
-python cli.py classify --dataset oil
+python run.py cli classify --dataset oil
 ```
 
 ```
@@ -539,21 +539,24 @@ Raman_forRecognition/
 ├── cli.py                        # 命令行入口：info / preprocess / classify
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
-├── run.py                        # 统一入口：python run.py 21 --no-show
+├── run.py                        # 统一入口：python run.py 21 / python run.py 01
+├── raman_fluorescence elimination/  # 入口脚本与演示数据（荧光扣除）
+│   ├── 01_quickstart.py          #   演示：模拟数据 ModPoly vs IModPoly
+│   ├── 02_process_my_csv.py      #   实用：处理自备 CSV
+│   ├── cli.py                    #   命令行入口：info / preprocess / classify
+│   ├── compare_baseline_methods.py #  六方法横向对比
+│   ├── my_raman.csv              #   示例输入
+│   └── *_result.png / *.csv      #   上述脚本的产出
 ├── raman_for test/               # 03–22 号实验：脚本与产出（按作者分两组）
 │   ├── README.md                 #   归属说明与运行方式
 │   ├── 01_我自己写的_03-11/       #   9 个脚本 + 17 个产出（含各类平均谱、混淆矩阵等）
 │   └── 02_AI协助_12-22/          #   11 个脚本 + 28 个产出（含论文四张主图）
-├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── tests/test_core.py            # 单元测试（unittest，23 个用例）
 ├── docs/                         # 技术报告
 │   ├── raman-classification-report.md         # 完整实验报告（七轮实验总汇）
 │   └── batch-correction-negative-result.md    # 批次校正负结果详细分析
 ├── my_raman.csv                  # 示例输入数据
-├── quickstart_result.png         # 01 的输出图
-├── my_raman_corrected.png        # 02 的输出图
-├── compare_result.png            # 对比脚本的三联图
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt

@@ -13,6 +13,11 @@ import sys
 import matplotlib.pyplot as plt
 import pybaselines
 
+# 脚本已迁入 raman_fluorescence elimination/ 子目录：把仓库根目录加入模块搜索路径。
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from raman_rec import make_synthetic, remove_baseline, save_csv
 
 OUTPUT_DIR = Path(__file__).resolve().parent
