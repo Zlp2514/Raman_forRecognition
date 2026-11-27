@@ -122,7 +122,7 @@ python run.py 03_load_dataset.py
 | bacterial（6 类菌，2710 条） | **0.904** | **0.778 ± 0.052** | **+0.126** |
 | oil（8 类油，560 条） | **0.982** | **0.891 ± 0.118** | **+0.091** |
 
-![分类结果](classification_result.png)
+![分类结果](raman_for%20test/01_我自己写的_03-11/classification_result.png)
 
 **这是本项目目前最值得关注的一组数字。** 随机划分看起来接近完美，但换成"留出一整个测量批次做测试"，
 准确率就掉了 9–13 个百分点。说明模型学到的特征里有相当一部分是"这一批测量长什么样"（批次偏移），
@@ -158,7 +158,7 @@ python run.py 04_classify.py --dataset oil --classifier lda
 | SNV + CORAL 对齐 | 0.698 | **−8.1 pt** | 0.863 | −2.9 pt |
 | SNV + 指纹区(500–1800) | 0.748 | −3.0 pt | 0.882 | −0.9 pt |
 
-![批次校正实验](batch_effect_result.png)
+![批次校正实验](raman_for%20test/01_我自己写的_03-11/batch_effect_result.png)
 
 **唯一正增益（+0.6 pt）小于一个标准差（±7.9 pt），不构成有效提升。**
 
@@ -192,7 +192,7 @@ python run.py 05_batch_effect.py --no-show
 | 仅背景形状×4 | 0.814 | 0.921 |
 | 仅平移×4 | 0.834 | 0.879 |
 
-![数据增强实验](augmentation_result.png)
+![数据增强实验](raman_for%20test/01_我自己写的_03-11/augmentation_result.png)
 
 细菌集上全部为负（−0.8 至 −1.3 pt），油脂集最大 +2.3 pt（标准差 0.13，仍在噪声内）。
 **而且这些增益的正负号会随降维设置翻转**（PCA=20 时"仅形状"为正、"仅平移"为负，全维时相反），
@@ -216,7 +216,7 @@ python run.py 05_batch_effect.py --no-show
 | 200 | 0.911 | 0.804 |
 | **不降维** | **0.932** | **0.828** |
 
-![维度扫描](dimension_sweep.png)
+![维度扫描](raman_for%20test/01_我自己写的_03-11/dimension_sweep.png)
 
 三点结论：
 
@@ -247,7 +247,7 @@ python run.py 08_dimension_sweep.py --no-show # 维度扫描 + 全维复检
 | LDA + 原型 | 0.704 ± 0.094 | 0.830 ± 0.088 |
 | LDA + kNN | 0.700 ± 0.093 | 0.836 ± 0.093 |
 
-![度量学习实验](metric_learning_result.png)
+![度量学习实验](raman_for%20test/01_我自己写的_03-11/metric_learning_result.png)
 
 **LDA 一开始是灾难性的**——随机划分从 0.932 掉到 0.752。原因是 1376 维、1898 样本下
 类内散度矩阵严重病态，投影被估计噪声主导。改用 **Ledoit-Wolf 收缩估计**后恢复到 0.818
@@ -271,7 +271,7 @@ python run.py 08_dimension_sweep.py --no-show # 维度扫描 + 全维复检
 | 原型距离 | 0.543 | 0.668 |
 | 马氏距离 | 0.519 | 0.647 |
 
-![开放集实验](openset_result.png)
+![开放集实验](raman_for%20test/01_我自己写的_03-11/openset_result.png)
 
 **平均 AUROC 只有 0.52–0.67，勉强高于随机猜测。** 但真正值得注意的是分类别的差异：
 
@@ -302,7 +302,7 @@ S-warneri 谱形结构较弱、更接近所有菌种的平均，经标准化后�
 | oil | MLP | 0.899 | 0.814 ± 0.103 | −8.4 |
 | oil | 1D-CNN | 0.917 | 0.830 ± 0.103 | −6.8 |
 
-![非线性模型实验](neural_result.png)
+![非线性模型实验](raman_for%20test/01_我自己写的_03-11/neural_result.png)
 
 **非线性没有带来提升。** 更重要的是诊断结果：CNN 的训练损失能降到 **0.001**，
 测试却只有 0.68——模型容量绰绰有余，缺的是**能覆盖变异的数据**。
@@ -352,7 +352,7 @@ MixStyle 域泛化尝试为负增益（留批次 0.751→0.703），属实现未
 | 10 | 0.676 | 0.154 | 0.442 | 0.558 |
 | 留一批次（3 条） | 0.684 | 0.147 | 0.556 | 0.540 |
 
-![库匹配结果](library_match_result_raw.png)
+![库匹配结果](raman_for%20test/02_AI协助_12-22/library_match_result_raw.png)
 
 三个发现：
 
@@ -382,7 +382,7 @@ python run.py 13_library_match.py --sim deriv --no-show   # 导数相关
 | 改进 | 随机 | **0.728** | **0.303** | **0.540** | 0.573 |
 | 改进 | 留批次 | 0.659 | **0.290** | 0.560 | 0.553 |
 
-![改进版对比](library_v2_result_bacterial.png)
+![改进版对比](raman_for%20test/02_AI协助_12-22/library_v2_result_bacterial.png)
 
 **拒识率翻倍，但 AUROC 几乎没动（0.563→0.573）。** 这说明提升几乎全部来自阈值变严，
 而不是"库内与库外变得更可分"——留批次下闭集准确率反而从 0.684 掉到 0.659。
@@ -419,7 +419,7 @@ python run.py 14_library_match_v2.py --dataset oil --no-show
 | 油脂 | 随机 | 0.670 | 0.869 | **0.881** | 0.94 / 0.77 |
 | 油脂 | 留批次 | **0.801** | 0.699 | 0.732 | 0.73 / 0.77 |
 
-![级联结果](cascade_result.png)
+![级联结果](raman_for%20test/02_AI协助_12-22/cascade_result.png)
 
 **随机协议下级联最优，留批次下纯分类器最优。** 分水岭是门控的误拒率：
 同一套阈值，随机协议放行 94%，留批次只放行 73%。
@@ -448,7 +448,7 @@ python run.py 15_cascade.py --keep-rate 0.995 --no-show
 | PCA=20 | 0.897 ± 0.007 | 0.778 ± 0.052 |
 | 指纹区 | 0.906 ± 0.008 | 0.800 ± 0.062 |
 
-![稳定性](seed_stability_bacterial.png)
+![稳定性](raman_for%20test/02_AI协助_12-22/seed_stability_bacterial.png)
 
 **种子波动 0.9 个百分点，折间波动 6.6 个百分点，差 7 倍。** 主导波动来源是批次难度，
 "抽到好划分"的质疑可以排除。
@@ -461,7 +461,7 @@ C–H 伸缩（膜脂）、酰胺 I（蛋白）、多糖与磷酸二酯（细胞
 打乱波段测重要性：**800 cm⁻¹（−15.0 pt）与 2864 cm⁻¹（−12.1 pt）贡献了近一半判别信息**，
 且关键波段**碎片化分布**——这正是 P3 中"波段筛选反而掉点"的原因。
 
-![归因](attribution_result.png)
+![归因](raman_for%20test/02_AI协助_12-22/attribution_result.png)
 
 ### 与文献对齐
 
@@ -494,7 +494,7 @@ python run.py 17_attribution.py --no-show
 代理指标确实能排序。**但默认参数本身就落在最优点附近**——imodpoly、airpls、snip
 的默认值就是网格最优值，代理选参在其中两个上反而更差。
 
-![无真值选参验证](param_selection_validate.png)
+![无真值选参验证](raman_for%20test/02_AI协助_12-22/param_selection_validate.png)
 
 **把噪声提高 4 倍（σ=20）后方法明显失效**：七个方法中四个的秩相关掉到 0 附近，
 asls 甚至变成 +0.03。而高噪声恰恰是真实单细胞光谱的常态。

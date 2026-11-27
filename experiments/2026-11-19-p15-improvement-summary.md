@@ -40,7 +40,7 @@
 \* 代理选参那条含显式基线校正，增益主要来自校正步骤本身；在同一实验内部，
 选参相对默认参数为 **−0.2 pt**。
 
-![汇总图](../improvement_summary.png)
+![汇总图](../raman_for%20test/02_AI协助_12-22/improvement_summary.png)
 
 ## 三个判读
 

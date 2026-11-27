@@ -39,3 +39,8 @@ desktop.ini
 # ---- 日志与临时文件 ----
 *.log
 ~$*
+
+# ---- 通道分离工具（split_channels）：示例谱与通道数据由脚本生成，结果图入库 ----
+split_channels/demo/*.csv
+split_channels/output/*.csv
+split_channels/my_ramantest_channels.csv

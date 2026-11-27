@@ -65,7 +65,7 @@ pspline_asls 6.832、asls 7.000、snip 9.301（ModPoly 对照为 5.140）。并�
 细菌类别：E-coli、L-innocua、P-stutzeri、R-terrigena、S-cohnii、S-warneri，每类 447–458 条。
 油脂类别：olive、canola、cocos、grape_seed、bsesam、peanut、sunflower_seeds、lien_seed，每类 70 条。
 
-![各类平均光谱](../dataset_overview.png)
+![各类平均光谱](../raman_for%20test/01_我自己写的_03-11/dataset_overview.png)
 
 ### 2.2 两种评估协议
 
@@ -87,7 +87,7 @@ pspline_asls 6.832、asls 7.000、snip 9.301（ModPoly 对照为 5.140）。并�
 | bacterial | 0.904 | 0.778 ± 0.052 | **−12.6 pt** |
 | oil | 0.982 | 0.891 ± 0.118 | **−9.1 pt** |
 
-![分类结果](../classification_result.png)
+![分类结果](../raman_for%20test/01_我自己写的_03-11/classification_result.png)
 
 混淆矩阵显示，细菌集的错误高度集中在 **E-coli ↔ R-terrigena** 这一对近缘种（互相误判 31 与 15 条），
 其余四类识别率都在 95% 以上。近缘种分离与跨批次泛化，是两个独立的开放问题。
@@ -112,7 +112,7 @@ pspline_asls 6.832、asls 7.000、snip 9.301（ModPoly 对照为 5.140）。并�
 | SNV + 指纹区(500–1800) | 0.748 | −3.0 pt | 0.882 | −0.9 pt |
 | SNV + 指纹区 + CORAL | 0.688 | −9.0 pt | 0.836 | −5.5 pt |
 
-![批次校正实验](../batch_effect_result.png)
+![批次校正实验](../raman_for%20test/01_我自己写的_03-11/batch_effect_result.png)
 
 **全部无效。** 唯一正增益（批次中心化 +0.6 pt）小于一个标准差（±7.9 pt）。
 
@@ -154,7 +154,7 @@ pspline_asls 6.832、asls 7.000、snip 9.301（ModPoly 对照为 5.140）。并�
 | 仅背景形状×4 | 0.814 | 0.921 |
 | 仅平移×4 | 0.834 | 0.879 |
 
-![数据增强实验](../augmentation_result.png)
+![数据增强实验](../raman_for%20test/01_我自己写的_03-11/augmentation_result.png)
 
 **关键判据：增益的符号随降维设置翻转。** PCA=20 时"仅形状"为正、"仅平移"为负；全维时恰好相反。
 真正的方法效应不会因为主成分数变化就反号——**这些 1–2 个百分点的差异是噪声，不是效应。**
@@ -177,7 +177,7 @@ pspline_asls 6.832、asls 7.000、snip 9.301（ModPoly 对照为 5.140）。并�
 | 原型·白化欧氏 | 0.774 | −0.4 pt | 0.755 | −13.6 pt |
 | kNN(k=5) | 0.796 | +1.8 pt | 0.839 | −5.2 pt |
 
-![分类器对比](../prototype_result.png)
+![分类器对比](../raman_for%20test/01_我自己写的_03-11/prototype_result.png)
 
 **原型法全面劣于 SVM。** 说明各类在特征空间里并非紧凑球状——批次偏移把同类样本拉长、分裂，
 类中心失去代表性。**瓶颈不在决策边界。** kNN 在两个数据集上方向相反，不算有效改进。
@@ -197,7 +197,7 @@ pspline_asls 6.832、asls 7.000、snip 9.301（ModPoly 对照为 5.140）。并�
 | 200 | 0.911 | 0.804 | 0.952 | 0.895 |
 | **不降维** | **0.932** | **0.828** | 0.964 | 0.898 |
 
-![维度扫描](../dimension_sweep.png)
+![维度扫描](../raman_for%20test/01_我自己写的_03-11/dimension_sweep.png)
 
 1. **细菌集上 PCA 是负收益**，维度越高越好；**油脂集几乎不受影响**（0.882–0.900）。
    原因：6 类近缘菌的判别信息分散在大量弱峰上，降维时被优先丢弃；8 类油靠少数强峰（C–H 伸缩）
@@ -225,7 +225,7 @@ LDA 是这一思路的最小实现：有监督最大化「类间散度 / 类内�
 | LDA + 原型 | 0.704 ± 0.094 | −12.4 pt | 0.830 ± 0.088 | −6.8 pt |
 | LDA + kNN | 0.700 ± 0.093 | −12.8 pt | 0.836 ± 0.093 | −6.2 pt |
 
-![度量学习实验](../metric_learning_result.png)
+![度量学习实验](../raman_for%20test/01_我自己写的_03-11/metric_learning_result.png)
 
 ### 失败原因可以精确定位
 
@@ -265,7 +265,7 @@ LDA 一开始是灾难性的：连**随机划分**都从 0.932 掉到 0.752。�
 | prototype | 0.550 | 0.543 | 0.660 | **0.668** |
 | mahalanobis | 0.526 | 0.519 | 0.642 | 0.647 |
 
-![开放集实验](../openset_result.png)
+![开放集实验](../raman_for%20test/01_我自己写的_03-11/openset_result.png)
 
 对照闭集准确率 0.85–0.97，**拒识远比分类困难**。三种评分器差异不大，
 换评分器不是解决方向——与实验四"换分类器无效"一致。
@@ -323,7 +323,7 @@ S-warneri 谱形结构较弱、接近所有菌种的平均谱，经 SNV 标准�
 | oil | 1D-CNN | 0.917 | 0.830 ± 0.103 | −6.8 |
 | bacterial | 1D-CNN + MixStyle | 0.622 | 0.703 ± 0.086 | −12.5 |
 
-![非线性模型实验](../neural_result.png)
+![非线性模型实验](../raman_for%20test/01_我自己写的_03-11/neural_result.png)
 
 ### 10.1 诊断比结论更重要
 

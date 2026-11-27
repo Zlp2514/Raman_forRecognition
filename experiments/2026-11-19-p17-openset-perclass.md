@@ -41,7 +41,7 @@ P7 的报告里给过分类别数值，但没有落盘成结果文件。论文�
 | olive | 0.430 |
 | sunflower_seeds | **0.371** |
 
-![分类别拒识](../openset_perclass.png)
+![分类别拒识](../raman_for%20test/02_AI协助_12-22/openset_perclass.png)
 
 ## 三个发现
 

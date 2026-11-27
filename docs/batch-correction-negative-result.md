@@ -94,7 +94,7 @@
 | snv+band | 0.982 | 0.882 ± 0.093 | −0.9 pt |
 | snv+band+coral | 0.964 | 0.836 ± 0.085 | −5.5 pt |
 
-![各预处理的两种协议对比](../batch_effect_result.png)
+![各预处理的两种协议对比](../raman_for%20test/01_我自己写的_03-11/batch_effect_result.png)
 
 ### 3.3 显著性判断
 
