@@ -104,7 +104,7 @@ cd ../.. && python -c "import zipfile; [zipfile.ZipFile(f'data/raw/{n}').extract
 解压后目录为 `data/Bacterial_data/` 与 `data/Oil_data/`，验证：
 
 ```bash
-python 03_load_dataset.py
+python run.py 03_load_dataset.py
 ```
 
 > **注意**：这两个数据集的 CSV 是"矩阵式"（第一行是位移轴，之后每行一条光谱），不是常见的两列格式，必须用 `raman_rec.load_bacterial()` / `load_oil()` 读取，不能用 `load_csv()`。
@@ -134,8 +134,8 @@ python 03_load_dataset.py
 复现：
 
 ```bash
-python 04_classify.py --no-show                    # 两个数据集都跑
-python 04_classify.py --dataset oil --classifier lda
+python run.py 04_classify.py --no-show                    # 两个数据集都跑
+python run.py 04_classify.py --dataset oil --classifier lda
 ```
 
 > **方法学修正（2026-11-19）**：后续维度扫描发现，本节固定使用的 PCA=20 在细菌集上是次优取值。
@@ -171,7 +171,7 @@ python 04_classify.py --dataset oil --classifier lda
 它说明浅层预处理已到瓶颈，提升必须来自数据驱动的不变性（增强 / 域对抗）或度量学习。
 
 ```bash
-python 05_batch_effect.py --no-show
+python run.py 05_batch_effect.py --no-show
 ```
 
 ## 数据增强实验（仍无显著提升）
@@ -231,8 +231,8 @@ python 05_batch_effect.py --no-show
 > 而不是结论本身。详见 `experiments/2026-11-19-p5-prototype-and-dimension.md`。
 
 ```bash
-python 07_prototype.py --no-show      # 原型分类 vs SVM
-python 08_dimension_sweep.py --no-show # 维度扫描 + 全维复检
+python run.py 07_prototype.py --no-show      # 原型分类 vs SVM
+python run.py 08_dimension_sweep.py --no-show # 维度扫描 + 全维复检
 ```
 
 ## 度量学习实验（仍不及基线）
@@ -369,8 +369,8 @@ MixStyle 域泛化尝试为负增益（留批次 0.751→0.703），属实现未
 > 分类别接受域**。详见 `experiments/2026-11-19-p11-library-match.md`。
 
 ```bash
-python 13_library_match.py --sim raw --no-show     # 原始谱相关
-python 13_library_match.py --sim deriv --no-show   # 导数相关
+python run.py 13_library_match.py --sim raw --no-show     # 原始谱相关
+python run.py 13_library_match.py --sim deriv --no-show   # 导数相关
 ```
 
 ### 改进版：补上峰位对齐、Fisher 加权、分类别阈值
@@ -403,8 +403,8 @@ python 13_library_match.py --sim deriv --no-show   # 导数相关
 **库匹配的可行性与"类别差异大小"强相关，不是算法本身好坏的问题。**
 
 ```bash
-python 14_library_match_v2.py --dataset bacterial --no-show
-python 14_library_match_v2.py --dataset oil --no-show
+python run.py 14_library_match_v2.py --dataset bacterial --no-show
+python run.py 14_library_match_v2.py --dataset oil --no-show
 ```
 
 ## 级联方案：库匹配做门控 + 分类器做判定（P12）
@@ -432,7 +432,7 @@ python 14_library_match_v2.py --dataset oil --no-show
 > 详见 `experiments/2026-11-19-p12-cascade.md`。
 
 ```bash
-python 15_cascade.py --keep-rate 0.995 --no-show
+python run.py 15_cascade.py --keep-rate 0.995 --no-show
 ```
 
 ## 稳定性与归因：把"运气"和"难度"分开（P13/P14）
@@ -470,8 +470,8 @@ C–H 伸缩（膜脂）、酰胺 I（蛋白）、多糖与磷酸二酯（细胞
 不是本项目的缺陷。
 
 ```bash
-python 16_seed_stability.py --no-show
-python 17_attribution.py --no-show
+python run.py 16_seed_stability.py --no-show
+python run.py 17_attribution.py --no-show
 ```
 
 ## 无真值选参实验（P10，结论：能力有限）
@@ -514,9 +514,9 @@ asls 甚至变成 +0.03。而高噪声恰恰是真实单细胞光谱的常态。
 > 详见 `experiments/2026-11-19-p10-param-selection.md`。
 
 ```bash
-python 12_param_selection.py                                 # σ=5 合成验证
-python 12_param_selection.py --noise 20                       # 噪声鲁棒性
-python 12_param_selection.py --stage apply --method asls      # 下游验证
+python run.py 12_param_selection.py                                 # σ=5 合成验证
+python run.py 12_param_selection.py --noise 20                       # 噪声鲁棒性
+python run.py 12_param_selection.py --stage apply --method asls      # 下游验证
 ```
 
 ## 目录结构
@@ -539,26 +539,11 @@ Raman_forRecognition/
 ├── cli.py                        # 命令行入口：info / preprocess / classify
 ├── 01_quickstart.py              # 演示：模拟数据 ModPoly vs IModPoly
 ├── 02_process_my_csv.py          # 实用：处理自备 CSV
-├── 03_load_dataset.py            # 数据：加载真实数据集、打印概览、画各类平均谱
-├── 04_classify.py                # 识别：PCA+SVM 分类，对比随机划分与留一批次
-├── 05_batch_effect.py            # 校正：八种预处理 × 两种协议的批次效应实验
-├── 06_augmentation.py            # 增强：训练期扰动 × 两种协议的增强实验
-├── 07_prototype.py               # 分类器：原型 / kNN vs SVM
-├── 08_dimension_sweep.py         # 维度：PCA 维数扫描 + 全维复检
-├── 09_metric_learning.py         # 度量：LDA（含收缩）与分类器组合
-├── 10_openset.py                 # 拒识：开放集识别（留一类作未知）
-├── 11_neural.py                  # 非线性：MLP 与 1D-CNN（需 PyTorch）
-├── 12_param_selection.py         # 选参：无真值代理指标验证与应用
-├── 13_library_match.py           # 库匹配：建库 + 比对 + 拒识的可行性
-├── 14_library_match_v2.py        # 库匹配改进版：对齐 + 加权 + 分类别阈值
-├── 15_cascade.py                 # 级联：库匹配门控 + SVM 判定
-├── 16_seed_stability.py          # 稳定性：多种子 vs 折间波动
-├── 17_attribution.py             # 归因：判别权重与波段重要性
-├── 18_improvement_summary.py     # 汇总：六类改进相对基线的变化（论文图 2）
-├── 19_paired_test.py             # 配对检验：逐折 Wilcoxon 符号秩检验
-├── 20_openset_perclass.py        # 拒识：分类别 AUROC（论文图 3）
-├── 21_protocol_gap.py            # 协议：双协议差距与逐批次画像（论文图 1）
-├── 22_rejection_tradeoff.py      # 拒识：净收益扫描与 1/N 上限（论文图 4）
+├── run.py                        # 统一入口：python run.py 21 --no-show
+├── raman_for test/               # 03–22 号实验：脚本与产出（按作者分两组）
+│   ├── README.md                 #   归属说明与运行方式
+│   ├── 01_我自己写的_03-11/       #   9 个脚本 + 17 个产出（含各类平均谱、混淆矩阵等）
+│   └── 02_AI协助_12-22/          #   11 个脚本 + 28 个产出（含论文四张主图）
 ├── compare_baseline_methods.py   # 对比：六种方法横向比较（支持 --csv）
 ├── experiments/README.md         # 实验记录规范与表格
 ├── tests/test_core.py            # 单元测试（unittest，23 个用例）
@@ -569,27 +554,6 @@ Raman_forRecognition/
 ├── quickstart_result.png         # 01 的输出图
 ├── my_raman_corrected.png        # 02 的输出图
 ├── compare_result.png            # 对比脚本的三联图
-├── dataset_overview.png          # 03 的各类平均光谱图
-├── classification_result.png     # 04 的混淆矩阵与各折准确率
-├── batch_effect_result.png       # 05 的各预处理两种协议对比
-├── augmentation_result.png       # 06 的增强配置两种协议对比
-├── prototype_result.png          # 07 的分类器对比
-├── dimension_sweep.png           # 08 的降维影响曲线
-├── metric_learning_result.png    # 09 的度量学习对比
-├── openset_result.png            # 10 的开放集评分器对比
-├── neural_result.png             # 11 的非线性模型对比
-├── param_selection_validate.png  # 12 的代理指标验证
-├── library_match_result_raw.png  # 13 的库匹配结果
-├── library_v2_result_bacterial.png # 14 的改进版对比（细菌）
-├── library_v2_result_oil.png     # 14 的改进版对比（油脂）
-├── cascade_result.png            # 15 的三种方案对比
-├── seed_stability_bacterial.png  # 16 的稳定性对比
-├── attribution_result.png        # 17 的波数归因
-├── improvement_summary.png       # 18 的六类改进汇总
-├── paired_test.png               # 19 的配对检验分布
-├── openset_perclass.png          # 20 的分类别拒识能力
-├── protocol_gap.png              # 21 的双协议差距（论文图 1）
-├── rejection_ceiling.png         # 22 的拒识收益上限（论文图 4）
 ├── data/                         # 数据集目录（不入库，见上文「数据集」）
 ├── 操作说明.txt                   # 中文操作手册
 ├── requirements.txt

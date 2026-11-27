@@ -9,6 +9,16 @@
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# 脚本已迁至 raman_for test/ 子目录：把仓库根目录加入模块搜索路径，
+# 否则 from raman_rec import ... 会失败。
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+
 import argparse
 from pathlib import Path
 
@@ -25,7 +35,7 @@ from raman_rec import (
 )
 
 ROOT = Path(__file__).resolve().parent
-DATA_DIR = ROOT / "data"
+DATA_DIR = REPO_ROOT / "data"
 
 matplotlib.rcParams["font.sans-serif"] = [
     "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", "DejaVu Sans"]

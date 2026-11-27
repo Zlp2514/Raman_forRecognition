@@ -21,6 +21,16 @@
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# 脚本已迁至 raman_for test/ 子目录：把仓库根目录加入模块搜索路径，
+# 否则 from raman_rec import ... 会失败。
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+
 import csv
 from pathlib import Path
 
@@ -34,7 +44,19 @@ from raman_rec.datasets import Dataset
 from raman_rec.transfer import row_snv
 
 ROOT = Path(__file__).resolve().parent
-DATA_DIR = ROOT / "data"
+DATA_DIR = REPO_ROOT / "data"
+
+# 部分输入来自同级目录（原 03–11 号脚本的产出）
+_MINE = REPO_ROOT / "raman_for test" / "01_我自己写的_03-11"
+
+
+def _input(name: str) -> Path:
+    """按 脚本目录 → 同级 01 目录 → 仓库根 的顺序查找输入文件。"""
+    for d in (ROOT, _MINE, REPO_ROOT):
+        p = d / name
+        if p.exists():
+            return p
+    return ROOT / name
 
 matplotlib.rcParams["font.sans-serif"] = [
     "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", "DejaVu Sans"]
@@ -114,7 +136,7 @@ def recompute_classifiers(ds: Dataset) -> list[dict]:
 def collect(ds: Dataset) -> tuple[float, list[dict]]:
     """汇集各轮结果，全部归一到全维留批次协议。"""
     # 基线
-    rows = read_csv_rows(ROOT / "dimension_sweep.csv")
+    rows = read_csv_rows(_input("dimension_sweep.csv"))
     base = next((float(r["loo_mean"]) for r in rows
                  if r["dataset"] == "bacterial" and r["section"] == "recheck_no_pca"
                  and r["dim_or_config"] == "snv"), 0.8277)
@@ -132,7 +154,7 @@ def collect(ds: Dataset) -> tuple[float, list[dict]]:
                             "source": "dimension_sweep.csv (recheck_no_pca)"})
 
     # P4 增强
-    for r in read_csv_rows(ROOT / "augmentation_result.csv"):
+    for r in read_csv_rows(_input("augmentation_result.csv")):
         if r["dataset"] == "bacterial" and r["config"] != "snv（无增强）":
             label = (r["config"].replace("snv + ", "")
                      .replace("增强×2", "随机增强×2")
@@ -147,7 +169,7 @@ def collect(ds: Dataset) -> tuple[float, list[dict]]:
     entries.extend(recompute_classifiers(ds))
 
     # P6 度量学习
-    for r in read_csv_rows(ROOT / "metric_learning_result.csv"):
+    for r in read_csv_rows(_input("metric_learning_result.csv")):
         if r["dataset"] != "bacterial" or r["config"] == "SVM（基线）":
             continue
         label = r["config"].replace("LDA(收缩) + SVM", "收缩 LDA + SVM") \
@@ -157,7 +179,7 @@ def collect(ds: Dataset) -> tuple[float, list[dict]]:
                         "source": "metric_learning_result.csv"})
 
     # P8 非线性
-    for r in read_csv_rows(ROOT / "neural_result.csv"):
+    for r in read_csv_rows(_input("neural_result.csv")):
         if r["dataset"] != "bacterial":
             continue
         entries.append({"category": "非线性模型", "method": r["model"],
@@ -165,7 +187,7 @@ def collect(ds: Dataset) -> tuple[float, list[dict]]:
                         "source": "neural_result.csv"})
 
     # P10 选参（默认 vs 代理，取代理）
-    for r in read_csv_rows(ROOT / "param_selection_apply_imodpoly.csv"):
+    for r in read_csv_rows(_input("param_selection_apply_imodpoly.csv")):
         if r.get("scheme") == "proxy_selected":
             entries.append({"category": "无真值选参", "method": "代理选参*",
                             "loo": float(r["loo_accuracy"]),
